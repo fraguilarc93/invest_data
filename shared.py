@@ -6,23 +6,34 @@ app_dir = Path(__file__).parent
 
 ### For fDi Markets
 fdi_markets = pd.read_csv(app_dir/'data/fdi_markets_03_25.csv', low_memory=False)
-fdi = pd.read_csv(app_dir/'data/fdi_markets_03_25.csv', low_memory=False)
+
+# fdi_markets.loc[fdi_markets['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
+# fdi_markets.loc[fdi_markets['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
 
 ### For UNCTAD
 ## 1. Inflow
 un_inflow = pd.read_csv(app_dir/'data/un_inflow.csv', low_memory=False)
+# un_inflow.loc[un_inflow['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
+# un_inflow.loc[un_inflow['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
 
 ## 2. Outflow
 un_outflow = pd.read_csv(app_dir/'data/un_outflow.csv', low_memory=False)
+# un_outflow.loc[un_outflow['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
+# un_outflow.loc[un_outflow['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
 
 ## 3. Instock
 un_instock = pd.read_csv(app_dir/'data/un_instock.csv', low_memory=False)
+# un_instock.loc[un_instock['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
+# un_instock.loc[un_instock['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
 
 ## 4. Outstock
 un_outstock = pd.read_csv(app_dir/'data/un_outstock.csv', low_memory=False)
+# un_outstock.loc[un_outstock['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
+# un_outstock.loc[un_outstock['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
 
 ### For IMF
 imf = pd.read_csv(app_dir/'data/imf_fdi.csv', low_memory=False)
+# imf.loc[imf['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
 
 ### Regions (unique list)
 regions = pd.read_csv(app_dir/'data/regions.csv', low_memory=False)
