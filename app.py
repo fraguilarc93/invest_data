@@ -12,6 +12,8 @@ from shared import sorted_regions, graph1, graph2, graph3, graph4, graph5, graph
 from shared import graph9 ### FDI Components
 from shared import graph10, graph11, graph12, graph13, graph14, graph15, graph16, graph17 ### Greenfield FDI
 
+from shared import un_inflow, un_outflow, un_instock, un_outstock
+
 # Define the UI layout
 app_ui = ui.page_fluid(
     ui.panel_title("IMAT Dashboard", "IMAT Dashboard"),
@@ -28,64 +30,6 @@ app_ui = ui.page_fluid(
         # HOME
         ui.nav_panel(
             "Home",
-            ui.HTML("""
-                <div style="margin-top:20px;"> 
-                    <h3 style="font-weight:bold;">What is Foreign Direct Investment (FDI)?</h3>
-                    <p style="font-size:16px;">
-                        Foreign direct investment reflects the objective of establishing a lasting interest by a resident 
-                        enterprise in one economy (direct investor) in an enterprise (direct investment enterprise) that is 
-                        resident in an economy other than that of the direct investor (OECD Benchmark Definition of Foreign 
-                        Direct Investment). 
-                    </p>
-                    <p style="font-size:16px;">
-                        The lasting interest implies the existence of a long-term relationship between the 
-                        direct investor and the direct investment enterprise and a significant degree of influence on the 
-                        management of the enterprise. The direct or indirect ownership of 10% or more of the voting power 
-                        of an enterprise resident in one economy by an investor resident in another economy is evidence of 
-                        such a relationship (Fifth Edition, paragraph 65).
-                    </p>
-
-                    <h3 style="font-weight:bold;">What is a Multinational Enterprise (MNE)?</h3>
-                    <p style="font-size:16px;">
-                        Legal entity that has at least one non-resident affiliate or branch, and exercises
-                        control over its affiliate(s) or branch(es) either directly—by having over 50% of the voting power in the
-                        unit—or by indirect transmission of control. The multinational enterprise is the ultimate controlling parent—
-                        the direct investor at the top of the control chain.
-                    </p>
-
-                    <h3 style="font-weight:bold;">What are MNE activities?</h3>
-                    <p style="font-size:16px;">
-                    An MNE exists when a resident investor in one economy establishes a “lasting interest” in an enterprise located in another economy, 
-                    generally demonstrated by owning at least 10% of the voting power. This lasting interest implies a long-term relationship and a 
-                    significant degree of influence over the management of the foreign enterprise. MNE activities therefore include setting up or 
-                    acquiring subsidiaries, branches, or joint ventures abroad, as well as expanding production, services, or sales across multiple countries.
-                    </p>
-                    <p style="font-size:16px;">
-                    These activities go beyond the initial equity stake: they also encompass reinvested earnings, intra-company loans, 
-                    and the coordination of operations across affiliates. In practice, MNEs integrate and internalize transactions 
-                    such as capital, technology, and knowledge transfers within their global corporate network, 
-                    optimizing costs, efficiency, and market access. As such, MNE activities under the OECD framework are 
-                    not limited to investment flows, but extend to the full range of cross-border economic operations and management structures 
-                    that tie together global value chains.
-                    </p>
-
-                    <h3 style="font-weight:bold;">What does the IMAT Dashboard include?</h3>
-                    <p style="font-size:16px;">Definition</p>
-
-                    <h3 style="font-weight:bold;">How is the IMAT Dashboard organized?</h3>
-                    <p style="font-size:16px;">Definition</p>
-
-                    <h3 style="font-weight:bold;">How can the IMAT Dashboard be used?</h3>
-                    <p style="font-size:16px;">Definition</p>
-
-                    <h3 style="font-weight:bold;">Why do we need the IMAT Dashboard?</h3>
-                    <p style="font-size:16px;">Definition</p>
-
-                    <h3 style="font-weight:bold;">What is the current version of the Dashboard?</h3>
-                    <p style="font-size:16px;">Definition</p>
-
-                </div>
-            """),
             ui.card(
                 ui.navset_pill(
                     ui.nav_panel(
@@ -303,6 +247,70 @@ app_ui = ui.page_fluid(
             "WB Investment Climate Hub",
             ui.HTML("<p>Redirecting…</p>"),  # never really shown
             value="wb_hub",
+        ),
+
+        # About
+
+        ui.nav_panel(
+            "About",
+            ui.HTML("""
+                <div style="margin-top:20px;"> 
+                    <h3 style="font-weight:bold;">What is Foreign Direct Investment (FDI)?</h3>
+                    <p style="font-size:16px;">
+                        Foreign direct investment reflects the objective of establishing a lasting interest by a resident 
+                        enterprise in one economy (direct investor) in an enterprise (direct investment enterprise) that is 
+                        resident in an economy other than that of the direct investor (OECD Benchmark Definition of Foreign 
+                        Direct Investment). 
+                    </p>
+                    <p style="font-size:16px;">
+                        The lasting interest implies the existence of a long-term relationship between the 
+                        direct investor and the direct investment enterprise and a significant degree of influence on the 
+                        management of the enterprise. The direct or indirect ownership of 10% or more of the voting power 
+                        of an enterprise resident in one economy by an investor resident in another economy is evidence of 
+                        such a relationship (Fifth Edition, paragraph 65).
+                    </p>
+
+                    <h3 style="font-weight:bold;">What is a Multinational Enterprise (MNE)?</h3>
+                    <p style="font-size:16px;">
+                        Legal entity that has at least one non-resident affiliate or branch, and exercises
+                        control over its affiliate(s) or branch(es) either directly—by having over 50% of the voting power in the
+                        unit—or by indirect transmission of control. The multinational enterprise is the ultimate controlling parent—
+                        the direct investor at the top of the control chain.
+                    </p>
+
+                    <h3 style="font-weight:bold;">What are MNE activities?</h3>
+                    <p style="font-size:16px;">
+                    An MNE exists when a resident investor in one economy establishes a “lasting interest” in an enterprise located in another economy, 
+                    generally demonstrated by owning at least 10% of the voting power. This lasting interest implies a long-term relationship and a 
+                    significant degree of influence over the management of the foreign enterprise. MNE activities therefore include setting up or 
+                    acquiring subsidiaries, branches, or joint ventures abroad, as well as expanding production, services, or sales across multiple countries.
+                    </p>
+                    <p style="font-size:16px;">
+                    These activities go beyond the initial equity stake: they also encompass reinvested earnings, intra-company loans, 
+                    and the coordination of operations across affiliates. In practice, MNEs integrate and internalize transactions 
+                    such as capital, technology, and knowledge transfers within their global corporate network, 
+                    optimizing costs, efficiency, and market access. As such, MNE activities under the OECD framework are 
+                    not limited to investment flows, but extend to the full range of cross-border economic operations and management structures 
+                    that tie together global value chains.
+                    </p>
+
+                    <h3 style="font-weight:bold;">What does the IMAT Dashboard include?</h3>
+                    <p style="font-size:16px;">Definition</p>
+
+                    <h3 style="font-weight:bold;">How is the IMAT Dashboard organized?</h3>
+                    <p style="font-size:16px;">Definition</p>
+
+                    <h3 style="font-weight:bold;">How can the IMAT Dashboard be used?</h3>
+                    <p style="font-size:16px;">Definition</p>
+
+                    <h3 style="font-weight:bold;">Why do we need the IMAT Dashboard?</h3>
+                    <p style="font-size:16px;">Definition</p>
+
+                    <h3 style="font-weight:bold;">What is the current version of the Dashboard?</h3>
+                    <p style="font-size:16px;">Definition</p>
+
+                </div>
+            """)
         ),
 
         id="main_tabs",
