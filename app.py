@@ -173,8 +173,17 @@ app_ui = ui.page_fluid(
                 ),
             ),
         ),
+        
+        # Bilateral FDI Trends 
+        ui.nav_panel(
+            "Bilateral FDI Trends",
+            ui.HTML("""<div style="text-align:center; margin-top:20px;">
+                        <h2><b>Bilateral FDI Trends</b></h2>
+                        <p style="font-size:16px;">Placeholder for Bilateral FDI Trends graphs and controls.</p>
+                    </div>""")
+        ),
 
-        # FDI COMPONENTS
+        # FDI Components
         ui.nav_panel(
             "FDI Components",
             ui.card(
@@ -186,6 +195,15 @@ app_ui = ui.page_fluid(
                     output_widget("fdi_graph9"),
                 ),
             ),
+        ),
+
+        # MNE Activity Trends
+        ui.nav_panel(
+            "MNE Activity Trends",
+            ui.HTML("""<div style="text-align:center; margin-top:20px;">
+                        <h2><b>MNE Activity Trends</b></h2>
+                        <p style="font-size:16px;">Placeholder for MNE Activity Trends graphs and controls.</p>
+                    </div>""")
         ),
 
         # --- Greenfield FDI (KEPT but HIDDEN) ---
@@ -256,16 +274,16 @@ app_ui = ui.page_fluid(
             value="greenfield",
             ),
 
-        # POLICIES
+        # Policies
         ui.nav_panel("Policies", ui.HTML("<p>Policies content goes here.</p>")),
 
-        # INCENTIVES
+        # Incentives
         ui.nav_panel("Incentives", ui.HTML("<p>Incentives content goes here.</p>")),
 
-        # FDI SPILLOVER TOOLKIT
+        # FDI Spillover Toolkit
         ui.nav_panel("FDI Spillover Toolkit", ui.HTML("<p>FDI Spillover Toolkit content goes here.</p>")),
 
-        # DATA SOURCES
+        # Data Sources
         ui.nav_panel(
             "Data Sources",
             ui.HTML("""
@@ -280,11 +298,27 @@ app_ui = ui.page_fluid(
             """)
         ),
 
-        # INVESTMENT CLIMATE UNIT WEBPAGE
-        ui.nav_panel("Investment Climate Unit webpage", ui.HTML("<p>ICU webpage content goes here.</p>")),
+        # WB Investment Climate Hub
+        ui.nav_panel(
+            "WB Investment Climate Hub",
+            ui.HTML("<p>Redirecting…</p>"),  # never really shown
+            value="wb_hub",
+        ),
 
         id="main_tabs",
-    )
+        
+    ),
+
+    # Add JavaScript redirect script
+    ui.tags.script("""
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('#main_tabs .nav-link[data-value="wb_hub"]');
+      if (link) {
+        e.preventDefault();
+        window.open('https://worldbankgroup.sharepoint.com/sites/ICHUB', '_blank');
+      }
+    }, true);
+    """),
 )
 
 
