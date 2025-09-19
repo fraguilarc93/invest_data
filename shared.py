@@ -37,7 +37,7 @@ app_dir = Path(__file__).parent
 
 #########################################################################
 ## 1. UNCTAD FDI (All data) + World Bank Official Boundaries Representative Points
-world_path = app_dir/"data/world map/fdi_panel.shp"
+world_path = "data/world\ map/fdi_panel.shp"
 fdi_panel = gpd.read_file(world_path)
 
 #########################################################################
