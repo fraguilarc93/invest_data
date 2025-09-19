@@ -1,4 +1,6 @@
 import pandas as pd
+import geopandas as gpd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -6,13 +8,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 from shinywidgets import output_widget, render_widget
-from ipyleaflet import Map
+from ipywidgets import Layout, FloatSlider, ToggleButtons, VBox, HTML
+from ipyleaflet import Map, basemaps, Choropleth, GeoJSON, Popup, WidgetControl
+from branca.colormap import linear
+import json
 
 from shared import sorted_regions, graph1, graph2, graph3, graph4, graph5, graph6, graph7, graph8 ### Overall FDI Trends
 from shared import graph9 ### FDI Components
 from shared import graph10, graph11, graph12, graph13, graph14, graph15, graph16, graph17 ### Greenfield FDI
 
-from shared import un_inflow, un_outflow, un_instock, un_outstock
+from shared import fdi_panel
 
 # Define the UI layout
 app_ui = ui.page_fluid(
@@ -27,30 +32,25 @@ app_ui = ui.page_fluid(
 
     # Top tabs instead of sidebar buttons
     ui.navset_tab(
+
         # HOME
         ui.nav_panel(
             "Home",
-            ui.card(
-                ui.navset_pill(
-                    ui.nav_panel(
-                        "Inflow",
-                        output_widget("map"),
-                        ui.div(
-                            ui.input_slider(
-                                "year_slider",
-                                "Select Year",
-                                min=2000,
-                                max=2021,
-                                value=2020,
-                                step=1,
-                            )
-                        ),
+            ui.div(
+                output_widget("map"),
+                ui.div(
+                    ui.input_slider(
+                        "year_slider",
+                        "Select Year",
+                        min=2000,
+                        max=2023,
+                        value=2023,
+                        step=1,
+                        sep=""
                     ),
-                    ui.nav_panel("Outflow", "Outflow Map"),
-                    ui.nav_panel("Instock", "Instock Map"),
-                    ui.nav_panel("Outstock", "Outstock Map"),
-                    id="map_tab",
+                    id="year_overlay",
                 ),
+                id="home_map_wrap",
             ),
         ),
 
@@ -327,107 +327,231 @@ app_ui = ui.page_fluid(
       }
     }, true);
     """),
+
+    ui.tags.style("""
+    /* Wrapper provides positioning context */
+    #home_map_wrap { position: relative; width: 100%; }
+
+    /* Put slider ON TOP of the map & controls */
+    #year_overlay {
+        position: absolute;
+        left: 50%;
+        bottom: 12px;
+        transform: translateX(-50%);
+        background: rgba(255,255,255,0.85);
+        padding: 6px 10px;
+        border-radius: 8px;
+        z-index: 2147483647;          /* max it out */
+        pointer-events: auto;          /* ensure it captures clicks */
+    }
+
+    /* Keep the map under the overlay */
+    #home_map_wrap .leaflet-container,
+    #home_map_wrap .jupyter-widget {
+        position: relative;
+        z-index: 0;
+    }
+    """),
+
+    ui.tags.style("""
+    #year_overlay { cursor: grab; }
+    #year_overlay.dragging { cursor: grabbing; }
+    """),
+
+    ui.tags.script("""
+    (function() {
+    const WRAP_ID = 'home_map_wrap';
+    const PANEL_ID = 'year_overlay';
+
+    function makeDraggable(panel, wrap) {
+        let dragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+
+        const getXY = (e) => ({
+        x: e.touches ? e.touches[0].clientX : e.clientX,
+        y: e.touches ? e.touches[0].clientY : e.clientY
+        });
+
+        const onDown = (e) => {
+        dragging = true;
+        panel.classList.add('dragging');
+
+        const wrapRect = wrap.getBoundingClientRect();
+        const rect = panel.getBoundingClientRect();
+        origLeft = rect.left - wrapRect.left;
+        origTop  = rect.top  - wrapRect.top;
+
+        const { x, y } = getXY(e);
+        startX = x; startY = y;
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onUp);
+        };
+
+        const onMove = (e) => {
+        if (!dragging) return;
+        if (e.cancelable) e.preventDefault();
+
+        const { x, y } = getXY(e);
+        const dx = x - startX, dy = y - startY;
+
+        const wrapRect = wrap.getBoundingClientRect();
+        const maxLeft = wrapRect.width  - panel.offsetWidth;
+        const maxTop  = wrapRect.height - panel.offsetHeight;
+
+        let left = Math.max(0, Math.min(origLeft + dx, maxLeft));
+        let top  = Math.max(0, Math.min(origTop  + dy, maxTop));
+
+        panel.style.left = left + 'px';
+        panel.style.top  = top  + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        panel.style.transform = 'none';
+        };
+
+        const onUp = () => {
+        dragging = false;
+        panel.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
+        };
+
+        panel.addEventListener('mousedown', onDown);
+        panel.addEventListener('touchstart', onDown, { passive: true });
+    }
+
+    function init() {
+        const wrap = document.getElementById(WRAP_ID);
+        const panel = document.getElementById(PANEL_ID);
+        if (wrap && panel && !panel.dataset.draggableInit) {
+        panel.dataset.draggableInit = '1';
+        makeDraggable(panel, wrap);
+        }
+    }
+
+    if (document.readyState !== 'loading') init();
+    else document.addEventListener('DOMContentLoaded', init);
+    new MutationObserver(init).observe(document.body, { childList: true, subtree: true });
+    })();
+    """),
+
+    # Add this just once in your UI (outside or after the slider)
+    ui.tags.script("""
+    document.addEventListener("DOMContentLoaded", function() {
+    const labels = document.querySelectorAll("#year_slider .irs-grid-text");
+    labels.forEach(l => l.textContent = l.textContent.replace(",", ""));
+    });
+    """)
 )
 
 
 # Define server    
 def server(input: Inputs, output: Outputs, session: Session): 
-    # ------------------------------
-    # Multi-step Tutorial Modals
-    # ------------------------------
-    def tutorial_step1():
+
+    ##################################
+    ## Tutorial Modal
+    def tutorial_step():
         return ui.modal(
             ui.HTML("""
-                <h2>👋 Welcome to the IMAT Dashboard</h2>
-                <p>This dashboard lets you explore Investment and Multinational Activity trends across economies, regions, and sectors.</p>
-                <p>Click <b>Next</b> to continue the tutorial.</p>
+                <h2>🌐 Welcome to the IMAT Dashboard</h2>
+                <p>The IMAT Dashboard is a product of the <b>Investment Climate Global Unit</b>, 
+                providing an interactive view of 📊 <b>Investment and Multinational Activity Trends</b> 
+                across countries, regions, and sectors.</p>
+                <p>🧭 Use the navigation tabs to explore different topics, 
+                and apply filters to tailor the data to your needs.</p>
+                <p>ℹ️ For background and methodology, visit the <b>About</b> tab.</p>
+                <p style="margin-top:15px;"><i>🚀 Click <b>Access</b> below to begin.</i></p>
             """),
             title="",
             easy_close=True,
-            footer=ui.input_action_button("btn_next_step1", "Next", class_="btn-primary")
+            footer=ui.input_action_button("btn_close_tutorial", "Access", class_="btn-primary")
         )
 
-    def tutorial_step2():
-        return ui.modal(
-            ui.TagList(
-                ui.HTML("""
-                    <h2>Step 2: Explore the Dashboard</h2>
-                    <p>Here you will see how to navigate the dashboard and use filters.</p>
-                """),
-                # Screenshot goes in project folder `www/`
-                ui.img(src="placeholder.png", style="max-width:100%; height:auto;")
-            ),
-            title="",
-            easy_close=True,
-            footer=ui.input_action_button("btn_next_step2", "Next", class_="btn-primary")
-        )
-
-    def tutorial_step3():
-        return ui.modal(
-            ui.HTML("""
-                <h2>Step 3: Get Started</h2>
-                <p>This is placeholder text for the final step of the tutorial.</p>
-                <p>Click <b>Finish</b> to start exploring 🚀</p>
-            """),
-            title="",
-            easy_close=True,
-            footer=ui.input_action_button("btn_finish_tutorial", "Finish", class_="btn-success")
-        )
-
-    # Show Step 1 when app loads
+    # Show tutorial when app loads
     @reactive.effect
-    def _show_step1():
-        ui.modal_show(tutorial_step1())
+    def _show_tutorial():
+        ui.modal_show(tutorial_step())
 
-    # Step 1 → Step 2
+    # Close tutorial when button clicked
     @reactive.effect
-    @reactive.event(input.btn_next_step1)
-    def _go_to_step2():
-        ui.modal_show(tutorial_step2())
-
-    # Step 2 → Step 3
-    @reactive.effect
-    @reactive.event(input.btn_next_step2)
-    def _go_to_step3():
-        ui.modal_show(tutorial_step3())
-
-    # Step 3 → Close tutorial
-    @reactive.effect
-    @reactive.event(input.btn_finish_tutorial)
+    @reactive.event(input.btn_close_tutorial)
     def _close_tutorial():
         ui.modal_remove()
 
-    # ------------------------------
-    # Sidebar button → tab mapping
-    # ------------------------------
-    @reactive.effect
-    @reactive.event(input.btn_home, input.btn_overall, input.btn_components, input.btn_greenfield,
-                    input.btn_policies, input.btn_incentives, input.btn_spillover, input.btn_data_sources,
-                    input.btn_investment_climate)
-    def _():
-        # Create a mapping of buttons to tabs
-        button_to_tab = {
-            "btn_home": "tab1",
-            "btn_overall": "tab2",
-            "btn_components": "tab3",
-            "btn_greenfield": "tab4",
-            "btn_policies": "tab5",
-            "btn_incentives": "tab6",
-            "btn_spillover": "tab10",
-            "btn_data_sources": "tab11",
-            "btn_investment_climate": "tab12",
-        }
-
-        # Loop through the button mappings
-        for btn_id, tab_id in button_to_tab.items():
-            if getattr(input, btn_id)():
-                ui.update_navs("hidden_tabs", selected=tab_id)
-                break  # Ensure only one update happens per click
-
+    ##################################
+    ## Home Map
     @render_widget
     def map():
-        selected_year = int(input.year_slider())
-        return Map(center=(50.6252978589571, 0.34580993652344),zoom=3)
+        year = int(input.year_slider())
+        df = fdi_panel.loc[fdi_panel["year"] == year].copy()
+        df = df.set_index("ecode_dest")
+
+        # Compute min/max and build colormap
+        vmin, vmax = df["net_inflow"].min(), df["net_inflow"].max()
+        cmap = linear.PuBuGn_09.scale(vmin, vmax)
+        cmap.caption = "FDI Inflow (USD millions)"
+
+        # Convert df to GeoJSON and add popup + fillColor property
+        geojson_data = json.loads(df.to_json())
+        for feat in geojson_data["features"]:
+            props = feat["properties"]
+            inflow = props.get("net_inflow")
+
+            if inflow is None or pd.isna(inflow):
+                inflow_str = "N/A"
+                fillColor = "lightgray"
+            else:
+                inflow_str = f"{inflow:,.0f}"
+                fillColor = cmap(inflow)
+
+            props["popup"] = (
+                f"<div style='font-size:11px; line-height:1.2; padding:2px;'>"
+                f"<b>{props.get('economy','')}</b><br>"
+                f"Year: {year}<br>"
+                f"Net inflow: {inflow_str}"
+                f"</div>"
+            )
+            props["fillColor"] = fillColor
+
+        # --- One reusable HTML widget for popups ---
+        popup_html = HTML()
+
+        # --- GeoJSON layer with per-feature style + popup ---
+        geo_layer = GeoJSON(
+            data=geojson_data,
+            style={"color": "black", "weight": 0, "fillOpacity": 0.6},
+            style_callback=lambda feat: {
+                "fillColor": feat["properties"].get("fillColor", "lightgray")
+            },
+            hover_style={"fillColor": "yellow", "fillOpacity": 0.7},
+            popup=popup_html
+        )
+
+        # --- Map ---
+        m = Map(
+            center=(0.0, 0.0),
+            zoom=2,
+            basemap=basemaps.CartoDB.Positron,
+            layout=Layout(width="100%", height="695px"),
+        )
+        m.add_layer(geo_layer)
+
+        # Update the HTML content on click
+        def update_popup(event, feature, **kwargs):
+            props = feature["properties"]
+            popup_html.value = props.get("popup", "No data")
+
+        geo_layer.on_click(update_popup)
+
+        # --- Legend ---
+        legend = HTML(cmap._repr_html_())
+        m.add_control(WidgetControl(widget=legend, position="bottomright"))
+
+        return m
+
 
     ##################################
     # Graph 1 - FDI Net Inflows Trends

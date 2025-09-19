@@ -1,6 +1,8 @@
 from pathlib import Path
 import pandas as pd
+import geopandas as gpd
 import numpy as np
+import os
 
 app_dir = Path(__file__).parent
 
@@ -30,6 +32,14 @@ un_instock = pd.read_csv(app_dir/'data/un_instock.csv', low_memory=False)
 un_outstock = pd.read_csv(app_dir/'data/un_outstock.csv', low_memory=False)
 # un_outstock.loc[un_outstock['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
 # un_outstock.loc[un_outstock['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
+
+
+#########################################################################
+## 5. UNCTAD FDI (All data) + World Bank Official Boundaries Representative Points
+world_path = app_dir/"data/world map/fdi_panel.shp"
+fdi_panel = gpd.read_file(world_path)
+
+#########################################################################
 
 ### For IMF
 imf = pd.read_csv(app_dir/'data/imf_fdi.csv', low_memory=False)
