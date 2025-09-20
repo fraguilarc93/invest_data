@@ -103,3 +103,4 @@ websockets==14.2
 wheel==0.45.1
 widgetsnbextension==4.0.13
 xyzservices==2025.1.0
+pyarrow==18.1.0

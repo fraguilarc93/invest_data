@@ -37,8 +37,8 @@ app_dir = Path(__file__).parent
 
 #########################################################################
 ## 1. UNCTAD FDI (All data) + World Bank Official Boundaries Representative Points
-world_path = app_dir/"data/world_map/fdi_panel.shp"
-fdi_panel = gpd.read_file(world_path, driver='ESRI Shapefile')
+world_path = app_dir / "data/world_map/fdi_panel.parquet"
+fdi_panel = gpd.read_parquet(world_path)
 
 #########################################################################
 ## 2. FDI Trends
