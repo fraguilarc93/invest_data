@@ -7,34 +7,6 @@ import os
 
 app_dir = Path(__file__).parent
 
-### For fDi Markets
-# fdi_markets = pd.read_csv(app_dir/'data/fdi_markets_03_25.csv', low_memory=False)
-
-# fdi_markets.loc[fdi_markets['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
-# fdi_markets.loc[fdi_markets['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
-
-# ### For UNCTAD
-# ## 1. Inflow
-# un_inflow = pd.read_csv(app_dir/'data/un_inflow.csv', low_memory=False)
-# # un_inflow.loc[un_inflow['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
-# # un_inflow.loc[un_inflow['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
-
-# ## 2. Outflow
-# un_outflow = pd.read_csv(app_dir/'data/un_outflow.csv', low_memory=False)
-# # un_outflow.loc[un_outflow['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
-# # un_outflow.loc[un_outflow['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
-
-# ## 3. Instock
-# un_instock = pd.read_csv(app_dir/'data/un_instock.csv', low_memory=False)
-# # un_instock.loc[un_instock['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
-# # un_instock.loc[un_instock['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
-
-# ## 4. Outstock
-# un_outstock = pd.read_csv(app_dir/'data/un_outstock.csv', low_memory=False)
-# # un_outstock.loc[un_outstock['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
-# # un_outstock.loc[un_outstock['economy_source'] == 'Singapore', 'region_source'] = 'Middle East & North Africa'
-
-
 #########################################################################
 ## 1. UNCTAD FDI (All data) + World Bank Official Boundaries Representative Points
 world_path = app_dir / "data/world_map/fdi_panel.parquet"
@@ -44,6 +16,15 @@ fdi_panel = gpd.read_parquet(world_path)
 ## 2. FDI Trends
 fdi_trends = pd.read_csv(app_dir/'data/fdi_trends.csv', low_memory=False)
 
+#########################################################################
+## 3. FDI Bilateral Trends
+bilateral_inflow = pd.read_csv(app_dir/'data/bilateral_inflow.csv', low_memory=False)
+bilateral_outflow = pd.read_csv(app_dir/'data/bilateral_outflow.csv', low_memory=False)
+bilateral_instock = pd.read_csv(app_dir/'data/bilateral_instock.csv', low_memory=False)
+bilateral_outstock = pd.read_csv(app_dir/'data/bilateral_outstock.csv', low_memory=False)
+bilateral_economies = pd.read_csv(app_dir/'data/economies_bilateral.csv', low_memory=False)
+bilateral_economies = bilateral_economies["economy"].dropna().tolist()
+
 ### For IMF
 imf = pd.read_csv(app_dir/'data/imf_fdi.csv', low_memory=False)
 # imf.loc[imf['economy_dest'] == 'Singapore', 'region_dest'] = 'Middle East & North Africa'
@@ -52,34 +33,6 @@ imf = pd.read_csv(app_dir/'data/imf_fdi.csv', low_memory=False)
 regions = pd.read_csv(app_dir/'data/regions.csv', low_memory=False)
 regions = regions.loc[regions['wb_region'] == 1]
 sorted_regions = sorted(regions['region'].unique())
-
-
-### Graphs
-
-# # Graph 1 - FDI Net Inflows Trends - with UNCTAD
-# graph1 = un_inflow.groupby(['year', 'economy_dest', 'region_dest', 'inc_level_dest'])['net_inflow'].sum().reset_index()
-# # graph1 = graph1[graph1['inc_level_dest'] == 'Developing']
-
-# # Graph 2 - Top 5 FDI Sources (Inflow) - with UNCTAD
-# graph2 = un_inflow[['year', 'economy_source', 'economy_dest', 'region_dest', 'net_inflow']]
-
-# # Graph 3 - FDI Net Outflows Trends - with UNCTAD
-# graph3 = un_outflow.groupby(['year', 'economy_source', 'region_source', 'inc_level_source'])['net_outflow'].sum().reset_index()
-
-# # Graph 4 - Top 5 FDI Destinations - with UNCTAD
-# graph4 = un_outflow[['year', 'economy_dest', 'economy_source', 'region_source', 'net_outflow']]
-
-# # Graph 5 - FDI Instock Trends - with UNCTAD
-# graph5 = un_instock.groupby(['year', 'economy_dest', 'region_dest', 'inc_level_dest'])['net_instock'].sum().reset_index()
-
-# # Graph 6 - Top 5 Stock FDI Sources - with UNCTAD
-# graph6 = un_instock[['year', 'economy_source', 'economy_dest', 'region_dest', 'net_instock']]
-
-# # Graph 7 - FDI Outstock Trends - with UNCTAD
-# graph7 = un_outstock.groupby(['year', 'economy_source', 'region_source', 'inc_level_source'])['net_outstock'].sum().reset_index()
-
-# # Graph 8 - Top 5 Stock FDI Destinations - with UNCTAD
-# graph8 = un_outstock[['year', 'economy_dest', 'economy_source', 'region_source', 'net_outstock']]
 
 # #############################################################
 

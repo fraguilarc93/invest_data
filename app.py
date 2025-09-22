@@ -17,7 +17,7 @@ import json
 # from shared import graph9 ### FDI Components
 # from shared import graph10, graph11, graph12, graph13, graph14, graph15, graph16, graph17 ### Greenfield FDI
 
-from shared import fdi_panel, sorted_regions, fdi_trends, graph9
+from shared import fdi_panel, sorted_regions, fdi_trends, graph9, bilateral_inflow, bilateral_outflow, bilateral_instock, bilateral_outstock, bilateral_economies
 
 # Define the UI layout
 app_ui = ui.page_fluid(
@@ -124,10 +124,65 @@ app_ui = ui.page_fluid(
         # Bilateral FDI Trends 
         ui.nav_panel(
             "Bilateral FDI Trends",
-            ui.HTML("""<div style="text-align:center; margin-top:20px;">
-                        <h2><b>Bilateral FDI Trends</b></h2>
-                        <p style="font-size:16px;">Placeholder for Bilateral FDI Trends graphs and controls.</p>
-                    </div>""")
+
+            ui.layout_sidebar(
+                ui.sidebar(
+
+                    # Single economy select
+                    ui.input_selectize(
+                        "economy_bilateral",
+                        "Select Economy:",
+                        choices=bilateral_economies,
+                        multiple=False
+                    ),
+
+                    # Flow vs Stock
+                    ui.input_radio_buttons(
+                        "bilateral_type",
+                        "Select Type:",
+                        choices=["Flow", "Stock"],
+                        selected="Flow"
+                    ),
+
+                    # Year Slider
+                    ui.input_slider(
+                        "bilateral_year",
+                        "Select Year:",
+                        min=2000,
+                        max=2023,
+                        value=2022,
+                        step=1,
+                        sep=""
+                    ),
+                ),
+
+                # Main areas: two graph cards (Inward + Outward)
+                ui.layout_columns(
+                    ui.card(
+                        ui.card_header(
+                            ui.HTML("<h6 style='text-align:left;'><b>Inward FDI</b></h6>")
+                        ),
+                        ui.HTML("<p style='font-size:11px; color:black;'>Top 5 economies investing in the selected economy.</p>"),
+                        output_widget("bilateral_inward_graph"),
+                        ui.HTML("<p style='font-size:10px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
+                        full_screen=True,
+                        fill=True,
+                        style="min-height:500px;" 
+                    ),
+                    ui.card(
+                        ui.card_header(
+                            ui.HTML("<h6 style='text-align:left;'><b>Outward FDI</b></h6>")
+                        ),
+                        ui.HTML("<p style='font-size:11px; color:black;'>Top 5 economies where the selected economy invests.</p>"),
+                        output_widget("bilateral_outward_graph"),
+                        ui.HTML("<p style='font-size:10px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
+                        full_screen=True,
+                        fill=True,
+                        style="min-height:500px;" 
+                    ),
+                    col_widths=(6,6)
+                )
+            )
         ),
 
         # FDI Components
@@ -460,8 +515,8 @@ def server(input: Inputs, output: Outputs, session: Session):
         return ui.modal(
             ui.HTML("""
                 <h2>🌐 Welcome to the IMAT Dashboard</h2>
-                <p>The IMAT Dashboard is a product of the <b>Investment Climate Global Unit</b>, 
-                providing an interactive view of 📊 <b>Investment and Multinational Activity Trends</b> 
+                <p>The IMAT Dashboard 📊 is a product of the Investment Climate Global Unit, 
+                providing an interactive view of investment and multinational activity trends
                 across countries, regions, and sectors.</p>
                 <p>🧭 Use the navigation tabs to explore different topics, 
                 and apply filters to tailor the data to your needs.</p>
@@ -618,686 +673,139 @@ def server(input: Inputs, output: Outputs, session: Session):
         return fig
 
     ##################################
-#     # Graph 1 - FDI Net Inflows Trends
-#     @reactive.effect
-#     def update_economies1():
-#         selected_region = input.region1()
-#         filtered_economies = (
-#             graph1.loc[graph1["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy1", choices=sorted(filtered_economies.tolist()), selected=None)
+    ## 4. FDI Bilateral Trends
 
-#     @render_widget
-#     def fdi_graph1():
-#         selected_economies = input.economy1()
-#         show_total_inflow = input.show_total_inflow()
-#         region = input.region1()
+    # Inward graph
+    @render_widget
+    def bilateral_inward_graph():
+        economy = input.economy_bilateral()
+        year = int(input.bilateral_year())
+        fdi_type = input.bilateral_type()
 
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
+        # Select dataset
+        if fdi_type == "Flow":
+            df = bilateral_inflow.copy()
+            econ_label = "Net Inflow (USD Millions)"
+        else:
+            df = bilateral_instock.copy()
+            econ_label = "Inward Stock (USD Millions)"
+
+        # Filter by economy + year
+        df_plot = df[(df["economy_dest"] == economy) & (df["year"] == year)].copy()
+
+        if df_plot.empty:
+            return px.scatter(title="No data available")
         
-#         selected_economies = selected_economies[:5]
-#         region_data = graph1[graph1["region_dest"] == region]
-#         region_stats = region_data.groupby("year")["net_inflow"].agg(
-#             max_inflow="max",
-#             min_inflow="min",
-#             median_inflow="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_dest"].isin(selected_economies)]
+        # Recompute shares to be safe
+        df_plot["share"] = df_plot["value"] / df_plot["value"].sum()
 
-#         # Plot using plotly express for the selected economies
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="net_inflow",
-#             color="economy_dest",
-#             markers=True,
-#             labels={"economy_dest": "Destination"},
-#         )
+        # Pie chart
+        fig = px.pie(
+            df_plot,
+            values="value",
+            names="economy_source",
+            custom_data=["share"],
+            labels={
+                "value": econ_label,
+                "economy_source": "Source Economy",
+                "share": "Share"
+            },
+            color_discrete_sequence=px.colors.sequential.Viridis
+        )
 
-#         fig.update_layout(
-#             # title={
-#             #    'text': f"FDI Net Inflow Trends for {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             # },
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-
-#         # Add shaded area between max and min inflows for the selected region
-#         #fig.add_traces(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["max_inflow"],
-#         #        fill='tonexty',  # Fill the area from the max line to the next y-axis
-#         #        fillcolor="rgba(169, 169, 169, 0.3)",  # Light gray fill with transparency
-#         #        line=dict(color='rgba(169, 169, 169, 1)'),  # Solid gray line
-#         #        name="Max Inflow"
-#         #    )
-#         #)
-#         #fig.add_traces(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["min_inflow"],
-#         #        fill='tonexty',  # Fill the area from the min line to the next y-axis
-#         #        fillcolor="rgba(169, 169, 169, 0.3)",  # Light gray fill with transparency
-#         #        line=dict(color='rgba(169, 169, 169, 1)'),  # Solid gray line
-#         #        name="Min Inflow"
-#         #    )
-#         #)
-
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_inflow"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median Inflow"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph1["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Net Inflow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
+        fig.update_traces(
+            hovertemplate="<b>%{label}</b><br>" +
+                        econ_label + ": %{value:,.1f}<br>" +
+                        "Share: %{customdata[0]:.1%}<extra></extra>",
+            textinfo="percent",
+            textposition="inside",
+            insidetextorientation="radial",
+            automargin=True
+        )
+        fig.update_layout(
+            showlegend=True,           # bring back legend
+            legend_title="Economy",
+            legend=dict(
+                orientation="v",       # vertical
+                x=1.05,                # push legend to right
+                xanchor="left",
+                y=0.5,                 # center at half of pie vertically
+                yanchor="middle"
+            ),
+            margin=dict(l=20, r=100, t=80, b=60),
+            autosize=True,
+            title=dict(
+                text=f"Sources of Inward FDI {fdi_type} into {economy} ({year})",
+                x=0.5, xanchor="center", yanchor="top"
+            )
+        )
+        return fig
     
-#     ##################################
-#     # Graph 2 - Top 5 Sources of FDI (Net Inflow)
-#     @reactive.effect
-#     def update_economies2():
-#         selected_region = input.region2() 
-#         economies_in_region = sorted(graph2[graph2['region_dest'] == selected_region]['economy_dest'].unique())  # Sort alphabetically
-#         ui.update_select("economy2", choices=economies_in_region, selected=None)
-
-#     @render_widget
-#     def fdi_graph2():
-#         selected_region = input.region2() 
-#         selected_economy = input.economy2() 
-
-#         if not selected_economy:
-#             return px.pie(title="Select an economy to view top FDI sources")
-
-#         # Filter data for the selected economy, region, and only for 2022
-#         economy_data = graph2[
-#             (graph2['economy_dest'].isin(selected_economy)) & 
-#             (graph2['region_dest'] == selected_region) & 
-#             (graph2['year'] == 2014)
-#         ]
-
-#         if economy_data.empty:
-#             return px.pie(title=f"No data available for {', '.join(selected_economy)} in 2022")
-
-#         # Aggregate net_inflow by economy_source
-#         top_sources = (economy_data.groupby('economy_source')['net_inflow']
-#                     .sum()
-#                     .nlargest(5)  # Get the top 5
-#                     .reset_index())
-
-#         # Create a category for remaining sources (Others)
-#         remaining_sources = economy_data[~economy_data['economy_source'].isin(top_sources['economy_source'])]
-#         other_category = remaining_sources['net_inflow'].sum()
-
-#         # If there are remaining sources, add an 'Others' category
-#         if other_category > 0:
-#             others_df = pd.DataFrame({'economy_source': ['Others'], 'net_inflow': [other_category]})
-#             top_sources = pd.concat([top_sources, others_df], ignore_index=True)
-
-#         # Create pie chart with plotly
-#         fig = px.pie(
-#             top_sources,
-#             names="economy_source",
-#             values="net_inflow",
-#             #title=f"Top 5 FDI Sources for {', '.join(selected_economy)} (2022)",
-#             color_discrete_sequence=px.colors.qualitative.Dark24,  # Custom dark color palette
-#             hole=0.4  # Creates a donut-style pie chart
-#         )
-
-#         fig.update_traces(textinfo="label+percent", hoverinfo="label+value")
-
-#          # Center the title above the pie chart
-#         #fig.update_layout(
-#             # title={
-#             #    "text": f"Top 5 FDI Sources for {', '.join(selected_economy)} (2022)",
-#             #    'y': 0.975,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             # }
-#         #)
-
-#         return fig
-    
-#     ##################################
-#     # Graph 3 - FDI Net Outflows Trends
-#     @reactive.effect
-#     def update_economies3():
-#         selected_region = input.region3()  # Use region1
-#         filtered_economies = (
-#             graph3.loc[graph3["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy3", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph3():
-#         selected_economies = input.economy3()
-#         show_total_inflow = input.show_total_inflow()
-#         region = input.region3()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         selected_economies = selected_economies[:5]
-#         region_data = graph3[graph3["region_source"] == region]
-#         region_stats = region_data.groupby("year")["net_outflow"].agg(
-#             max_outflow="max",
-#             min_outflow="min",
-#             median_outflow="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_source"].isin(selected_economies)]
-
-#         # Plot using plotly express for the selected economies
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="net_outflow",
-#             color="economy_source",
-#             markers=True,
-#             labels={"economy_source": "Source"},
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"FDI Net Outflow Trends for {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_outflow"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median Outflow"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph3["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Net Outflow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-    
-#     ##################################################
-#     # Graph 4 - Top 5 Destinations of FDI (Net Outflow)
-#     @reactive.effect
-#     def update_economies4():
-#         selected_region = input.region4()
-#         economies_in_region = sorted(graph4[graph4['region_source'] == selected_region]['economy_source'].unique())
-#         ui.update_select("economy4", choices=economies_in_region, selected=None)
-
-#     @render_widget
-#     def fdi_graph4():
-#         selected_region = input.region4()
-#         selected_economy = input.economy4()
-
-#         if not selected_economy:
-#             return px.pie(title="Select an economy to view top FDI Destinations")
-
-#         # Filter data for the selected economy, region, and only for 2022
-#         economy_data = graph4[
-#             (graph4['economy_source'].isin(selected_economy)) & 
-#             (graph4['region_source'] == selected_region) & 
-#             (graph4['year'] == 2022)
-#         ]
-
-#         if economy_data.empty:
-#             return px.pie(title=f"No data available for {', '.join(selected_economy)} in 2022")
-
-#         # Aggregate net_inflow by economy_dest
-#         top_destinations = (economy_data.groupby('economy_dest')['net_outflow']
-#                     .sum()
-#                     .nlargest(5)  # Get the top 5
-#                     .reset_index())
-
-#         # Create a category for remaining destinations (Others)
-#         remaining_destinations = economy_data[~economy_data['economy_dest'].isin(top_destinations['economy_dest'])]
-#         other_category = remaining_destinations['net_outflow'].sum()
-
-#         # If there are remaining destinations, add an 'Others' category
-#         if other_category > 0:
-#             others_df = pd.DataFrame({'economy_dest': ['Others'], 'net_outflow': [other_category]})
-#             top_destinations = pd.concat([top_destinations, others_df], ignore_index=True)
-
-#         # Create pie chart with plotly
-#         fig = px.pie(
-#             top_destinations,
-#             names="economy_dest",
-#             values="net_outflow",
-#             # title=f"Top 5 FDI Destinations for {', '.join(selected_economy)} (2022)",
-#             color_discrete_sequence=px.colors.qualitative.Dark24,  # Custom dark color palette
-#             hole=0.4  # Creates a donut-style pie chart
-#         )
-
-#         fig.update_traces(textinfo="label+percent", hoverinfo="label+value")
-
-#          # Center the title above the pie chart
-#         #fig.update_layout(
-#             #title={
-#             #    "text": f"Top 5 FDI Destinations for {', '.join(selected_economy)} (2022)",
-#             #    'y': 0.975,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #}
-#         #)
-
-#         return fig
-    
-#     ##############################
-#     # Graph 5 - FDI Instock Trends
-#     @reactive.effect
-#     def update_economies5():
-#         selected_region = input.region5()  # Use region1
-#         filtered_economies = (
-#             graph5.loc[graph5["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy5", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph5():
-#         selected_economies = input.economy5()
-#         region = input.region5()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         selected_economies = selected_economies[:5]
-#         region_data = graph5[graph5["region_dest"] == region]
-#         region_stats = region_data.groupby("year")["net_instock"].agg(
-#             max_instock="max",
-#             min_instock="min",
-#             median_instock="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_dest"].isin(selected_economies)]
-
-#         # Plot using plotly express for the selected economies
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="net_instock",
-#             color="economy_dest",
-#             markers=True,
-#             labels={"economy_dest": "Destination"},
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Instock FDI Trends for {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_instock"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median Instock"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph5["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Instock FDI (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-
-#     ###################################
-#     # Graph 6 - Top 5 Stock FDI Sources
-#     @reactive.effect
-#     def update_economies6():
-#         selected_region = input.region6()
-#         economies_in_region = sorted(graph6[graph6['region_dest'] == selected_region]['economy_dest'].unique())
-#         ui.update_select("economy6", choices=economies_in_region, selected=None)
-
-#     @render_widget
-#     def fdi_graph6():
-#         selected_region = input.region6()
-#         selected_economy = input.economy6()
-
-#         if not selected_economy:
-#             return px.pie(title="Select an economy to view top FDI sources")
-
-#         # Filter data for the selected economy, region, and only for 2022
-#         economy_data = graph6[
-#             (graph6['economy_dest'].isin(selected_economy)) & 
-#             (graph6['region_dest'] == selected_region) & 
-#             (graph6['year'] == 2022)
-#         ]
-
-#         if economy_data.empty:
-#             return px.pie(title=f"No data available for {', '.join(selected_economy)} in 2022")
-
-#         # Aggregate net_instock by economy_source
-#         top_sources = (economy_data.groupby('economy_source')['net_instock']
-#                     .sum()
-#                     .nlargest(5)  # Get the top 5
-#                     .reset_index())
-
-#         # Create a category for remaining sources (Others)
-#         remaining_sources = economy_data[~economy_data['economy_source'].isin(top_sources['economy_source'])]
-#         other_category = remaining_sources['net_instock'].sum()
-
-#         # If there are remaining sources, add an 'Others' category
-#         if other_category > 0:
-#             others_df = pd.DataFrame({'economy_source': ['Others'], 'net_instock': [other_category]})
-#             top_sources = pd.concat([top_sources, others_df], ignore_index=True)
-
-#         # Create pie chart with plotly
-#         fig = px.pie(
-#             top_sources,
-#             names="economy_source",
-#             values="net_instock",
-#             color_discrete_sequence=px.colors.qualitative.Dark24,  # Custom dark color palette
-#             hole=0.4  # Creates a donut-style pie chart
-#         )
-
-#         fig.update_traces(textinfo="label+percent", hoverinfo="label+value")
-
-#          # Center the title above the pie chart
-#         #fig.update_layout(
-#             #title={
-#         #        "text": f"Top 5 Stock FDI Sources for {', '.join(selected_economy)} (2022)",
-#         #        'y': 0.975,  # vertical position
-#         #        'x': 0.5,  # horizontal center
-#         #        'xanchor': 'center',
-#         #        'yanchor': 'top',
-#         #        'font': dict(size=22)  # adjust font size here
-#             #}
-#         #)
-
-#         return fig
-
-#     ##################################
-#     # Graph 7 - FDI Outstock Trends
-#     @reactive.effect
-#     def update_economies7():
-#         selected_region = input.region7()
-#         filtered_economies = (
-#             graph7.loc[graph7["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy7", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph7():
-#         selected_economies = input.economy7()
-#         region = input.region7()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         selected_economies = selected_economies[:5]
-#         region_data = graph7[graph7["region_source"] == region]
-#         region_stats = region_data.groupby("year")["net_outstock"].agg(
-#             max_outstock="max",
-#             min_outstock="min",
-#             median_outstock="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_source"].isin(selected_economies)]
-
-#         # Plot using plotly express for the selected economies
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="net_outstock",
-#             color="economy_source",
-#             markers=True,
-#             labels={"economy_source": "Source"},
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Outstock FDI Trends for {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_outstock"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median Outstock"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph7["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Outstock FDI (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-   
-#     ##################################################
-#     # Graph 8 - Top 5 Stock FDI Destinations
-#     @reactive.effect
-#     def update_economies8():
-#         selected_region = input.region8()
-#         economies_in_region = sorted(graph8[graph8['region_source'] == selected_region]['economy_source'].unique())
-#         ui.update_select("economy8", choices=economies_in_region, selected=None)
-
-#     @render_widget
-#     def fdi_graph8():
-#         selected_region = input.region8()
-#         selected_economy = input.economy8()
-
-#         if not selected_economy:
-#             return px.pie(title="Select an economy to view top FDI Destinations")
-
-#         # Filter data for the selected economy, region, and only for 2022
-#         economy_data = graph8[
-#             (graph8['economy_source'].isin(selected_economy)) & 
-#             (graph8['region_source'] == selected_region) & 
-#             (graph8['year'] == 2022)
-#         ]
-
-#         if economy_data.empty:
-#             return px.pie(title=f"No data available for {', '.join(selected_economy)} in 2022")
-
-#         # Aggregate net_inflow by economy_dest
-#         top_destinations = (economy_data.groupby('economy_dest')['net_outstock']
-#                     .sum()
-#                     .nlargest(5)  # Get the top 5
-#                     .reset_index())
-
-#         # Create a category for remaining destinations (Others)
-#         remaining_destinations = economy_data[~economy_data['economy_dest'].isin(top_destinations['economy_dest'])]
-#         other_category = remaining_destinations['net_outstock'].sum()
-
-#         # If there are remaining destinations, add an 'Others' category
-#         if other_category > 0:
-#             others_df = pd.DataFrame({'economy_dest': ['Others'], 'net_outstock': [other_category]})
-#             top_destinations = pd.concat([top_destinations, others_df], ignore_index=True)
-
-#         # Create pie chart with plotly
-#         fig = px.pie(
-#             top_destinations,
-#             names="economy_dest",
-#             values="net_outstock",
-#             color_discrete_sequence=px.colors.qualitative.Dark24,  # Custom dark color palette
-#             hole=0.4  # Creates a donut-style pie chart
-#         )
-
-#         fig.update_traces(textinfo="label+percent", hoverinfo="label+value")
-
-#          # Center the title above the pie chart
-#         #fig.update_layout(
-#             #title={
-#         #        "text": f"Top 5 Stock FDI Destinations for {', '.join(selected_economy)} (2022)",
-#         #        'y': 0.975,  # vertical position
-#         #        'x': 0.5,  # horizontal center
-#         #        'xanchor': 'center',
-#         #        'yanchor': 'top',
-#         #        'font': dict(size=22)  # adjust font size here
-#         #    }
-#         #)
-
-#         return fig
-
-#     ######################### ######################### ######################### #########################
+    # Outward Graph
+    @render_widget
+    def bilateral_outward_graph():
+        economy = input.economy_bilateral()
+        year = int(input.bilateral_year())
+        fdi_type = input.bilateral_type()
+
+        # Select dataset
+        if fdi_type == "Flow":
+            df = bilateral_outflow.copy()
+            econ_label = "Net Outflow (USD Millions)"
+        else:
+            df = bilateral_outstock.copy()
+            econ_label = "Outward Stock (USD Millions)"
+
+        # Filter by economy + year
+        df_plot = df[(df["economy_source"] == economy) & (df["year"] == year)].copy()
+
+        if df_plot.empty:
+            return px.scatter(title="No data available")
+
+        # Recompute shares
+        df_plot["share"] = df_plot["value"] / df_plot["value"].sum()
+
+        # Pie chart
+        fig = px.pie(
+            df_plot,
+            values="value",
+            names="economy_dest",
+            custom_data=["share"],
+            labels={
+                "value": econ_label,
+                "economy_dest": "Destination Economy",
+                "share": "Share"
+            },
+            color_discrete_sequence=px.colors.sequential.Viridis
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{label}</b><br>" +
+                        econ_label + ": %{value:,.1f}<br>" +
+                        "Share: %{customdata[0]:.1%}<extra></extra>",
+            textinfo="percent",
+            textposition="inside",
+            insidetextorientation="radial",
+            automargin=True
+        )
+        fig.update_layout(
+            showlegend=True,           # bring back legend
+            legend_title="Economy",
+            legend=dict(
+                orientation="v",       # vertical
+                x=1.05,                # push legend to right
+                xanchor="left",
+                y=0.5,                 # center at half of pie vertically
+                yanchor="middle"
+            ),
+            margin=dict(l=20, r=100, t=80, b=60),
+            autosize=True,
+            title=dict(
+                text=f"Sources of Outward FDI {fdi_type} from {economy} ({year})",
+                x=0.5, xanchor="center", yanchor="top"
+            )
+        )
+        return fig
 
 #     #########################
     # Graph 9 - FDI Composition (Equity, Reinvestment, Debt)
