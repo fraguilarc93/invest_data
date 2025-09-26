@@ -672,7 +672,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 f"<b>{props.get('economy','')}</b><br>"
                 f"Year: {year}<br>"
                 f"Net inflow (billions USD): "
-                f"{'N/A' if inflow is None or pd.isna(inflow) else f'{inflow:.1f}'}<br><br>"
+                f"{'N/A' if inflow is None or pd.isna(inflow) else '{:.1f}'.format(inflow)}<br><br>"
 
                 # Table layout for sources, top source, and MNEs
                 f"<table style='width:100%; font-size:11px;'>"
@@ -692,13 +692,13 @@ def server(input: Inputs, output: Outputs, session: Session):
                 f"<table style='width:100%; font-size:11px;'>"
                 f"<tr>"
                 f"<td>Debt Instruments: "
-                f"{'N/A' if pd.isna(props.get('share_debt_instruments')) else f'{props.get('share_debt_instruments'):.1f}'}%</td>"
+                f"{'N/A' if pd.isna(props.get('share_debt_instruments')) else '{:.1f}'.format(props.get('share_debt_instruments'))}%</td>"
                 f"<td>Equity: "
-                f"{'N/A' if pd.isna(props.get('share_equity')) else f'{props.get('share_equity'):.1f}'}%</td>"
+                f"{'N/A' if pd.isna(props.get('share_equity')) else '{:.1f}'.format(props.get('share_equity'))}%</td>"
                 f"</tr>"
                 f"<tr>"
                 f"<td colspan='2'>Reinvested Earnings: "
-                f"{'N/A' if pd.isna(props.get('share_reinv_earnings')) else f'{props.get('share_reinv_earnings'):.1f}'}%</td>"
+                f"{'N/A' if pd.isna(props.get('share_reinv_earnings')) else '{:.1f}'.format(props.get('share_reinv_earnings'))}%</td>"
                 f"</tr>"
                 f"</table><br>"
 
@@ -715,7 +715,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 f"</table><br>"
 
                 # Note
-                f"<i>Note: If 'None' of 'N/A' appears, it means the data is unavailable.</i>"
+                f"<i>Note: If 'None' or 'N/A' appears, it means the data is unavailable.</i>"
                 f"</div>"
             )
 
