@@ -1,9 +1,5 @@
 import pandas as pd
-import geopandas as gpd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import plotly.express as px
 import plotly.graph_objects as go
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui
@@ -13,11 +9,7 @@ from ipyleaflet import Map, basemaps, Choropleth, GeoJSON, Popup, WidgetControl
 from branca.colormap import linear
 import json
 
-# from shared import sorted_regions, graph1, graph2, graph3, graph4, graph5, graph6, graph7, graph8 ### Overall FDI Trends
-# from shared import graph9 ### FDI Components
-# from shared import graph10, graph11, graph12, graph13, graph14, graph15, graph16, graph17 ### Greenfield FDI
-
-from shared import fdi_panel, sorted_regions, fdi_trends, graph9, bilateral_inflow, bilateral_outflow, bilateral_instock, bilateral_outstock, bilateral_economies
+from shared import fdi_panel, fdi_trends, bilateral_inflow, bilateral_outflow, bilateral_instock, bilateral_outstock, bilateral_economies, fdi_components
 
 # Define the UI layout
 app_ui = ui.page_fluid(
@@ -38,6 +30,7 @@ app_ui = ui.page_fluid(
             "Home",
             ui.div(
                 output_widget("map"),
+
                 ui.div(
                     ui.input_slider(
                         "year_slider",
@@ -52,6 +45,30 @@ app_ui = ui.page_fluid(
                 ),
                 id="home_map_wrap",
             ),
+
+            # Card below the map with margin
+            ui.div(
+                ui.card(
+                    ui.card_header(
+                        ui.HTML("<h6 style='text-align:left;'><b>About this Map</b></h6>") 
+                    ),
+                    ui.HTML("""
+                    <p style='font-size:14px; color:black; text-align:left;'>
+                    This map provides an overview of investment and multinational enterprise activities
+                    across economies from 2000 to 2023. Countries are shaded by percentile ranks of annual
+                    net inflows, allowing for easier comparison across economies. Use the slider to select
+                    a year and explore country-level investment patterns.
+                    </p>
+                    <p style='font-size:14px; color:black; text-align:left; margin-top:10px;'>
+                    Data sources: United Nations Conference on Trade and Development (UNCTAD),
+                    International Monetary Fund (IMF), World Bank <i>Business Ready</i> report,
+                    and the Multinational Revenue, Employment, and Investment Database (MREID)
+                    of the U.S. International Trade Commission.
+                    </p>
+                    """),
+                ),
+                style="margin-top:20px;",
+            )
         ),
 
         # FDI TRENDS
@@ -91,13 +108,13 @@ app_ui = ui.page_fluid(
                         "fdi_indicator",
                         "Select Indicator:",
                         choices=[
-                            "US$ Millions at Current Prices",
-                            "% Change from 2000 (US$ Million)",
-                            "% of Global Total",
-                            "% of Gross Domestic Product",
-                            "% of Gross Fixed Capital Formation"
+                            "US$ billions (current prices)",
+                            "% change from 2000 baseline (US$ billions)",
+                            "Share of Global Total",
+                            "Share of Gross Domestic Product (GDP)",
+                            "Share of Gross Fixed Capital Formation (GFCF)"
                         ],
-                        selected="US$ Millions at Current Prices"
+                        selected="US$ billions (current prices)"
                     ),
                 
                 ),
@@ -108,14 +125,11 @@ app_ui = ui.page_fluid(
                         ui.card_header(
                             ui.HTML("<h6 style='text-align:left;'><b>Foreign Direct Investment (FDI) trends</b></h6>")
                         ),
-                        ui.HTML("<p style='font-size:11px; color:black;'>Select filters from the sidebar to generate the FDI Trends graph.</p>"),
+                        ui.HTML("<p style='font-size:14px; color:black;'>Select filters from the sidebar to generate the FDI Trends graph.</p>"),
+                        output_widget("fdi_trends_graph"),
+                        ui.HTML("<p style='font-size:11px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
                         full_screen=False,
                         fill=True,
-                    ),
-
-                    # Graph placeholder
-                    ui.card( 
-                        output_widget("fdi_trends_graph")
                     ),
                 )
             )
@@ -123,7 +137,7 @@ app_ui = ui.page_fluid(
         
         # Bilateral FDI Trends 
         ui.nav_panel(
-            "Bilateral FDI Trends",
+            "Bilateral Trends",
 
             ui.layout_sidebar(
                 ui.sidebar(
@@ -162,9 +176,9 @@ app_ui = ui.page_fluid(
                         ui.card_header(
                             ui.HTML("<h6 style='text-align:left;'><b>Inward FDI</b></h6>")
                         ),
-                        ui.HTML("<p style='font-size:11px; color:black;'>Top 5 economies investing in the selected economy.</p>"),
+                        ui.HTML("<p style='font-size:14px; color:black;'>Top 5 economies investing in the selected economy.</p>"),
                         output_widget("bilateral_inward_graph"),
-                        ui.HTML("<p style='font-size:10px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
+                        ui.HTML("<p style='font-size:11px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
                         full_screen=True,
                         fill=True,
                         style="min-height:500px;" 
@@ -173,9 +187,9 @@ app_ui = ui.page_fluid(
                         ui.card_header(
                             ui.HTML("<h6 style='text-align:left;'><b>Outward FDI</b></h6>")
                         ),
-                        ui.HTML("<p style='font-size:11px; color:black;'>Top 5 economies where the selected economy invests.</p>"),
+                        ui.HTML("<p style='font-size:14px; color:black;'>Top 5 economies where the selected economy invests.</p>"),
                         output_widget("bilateral_outward_graph"),
-                        ui.HTML("<p style='font-size:10px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
+                        ui.HTML("<p style='font-size:11px; color:gray; text-align:center;'>Source: United Nations Conference on Trade and Development (UNCTAD)</p>"),
                         full_screen=True,
                         fill=True,
                         style="min-height:500px;" 
@@ -188,116 +202,97 @@ app_ui = ui.page_fluid(
         # FDI Components
         ui.nav_panel(
             "FDI Components",
-            ui.card(
-                ui.card_header(ui.HTML("""<div style="text-align:center; margin-top:20px;"><h2><b>FDI Inflows by Component</b></h2></div>""")),
-                ui.p(
-                    ui.HTML("""<div style="text-align:left;"><h3>Inflow by Debt Instruments, Equity, or Reinvested Earnings</h3></div>"""),
-                    ui.input_select("region9", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-                    ui.input_select("economy9", "Select an Economy", choices=[], multiple=True),
-                    output_widget("fdi_graph9"),
+
+            ui.layout_sidebar(
+                ui.sidebar(
+
+                    # Single economy select
+                    ui.input_selectize(
+                        "economy_component",
+                        "Select Economy:",
+                        choices=bilateral_economies,
+                        multiple=False
+                    ),
+
+                    # Select components
+                    ui.input_checkbox_group(
+                        "component",
+                        "Select Inward FDI Component",
+                        choices={
+                            "share_debt_instruments": "Share of Debt Instruments",
+                            "share_equity": "Equity",
+                            "share_reinv_earnings": "Reinvested Earnings"
+                        },
+                        selected=[
+                            "share_debt_instruments",
+                            "share_equity",
+                            "share_reinv_earnings"
+                        ]
+                    ),
+
                 ),
-            ),
+
+                ui.div(
+                    ui.card(
+                        ui.card_header(
+                            ui.HTML("<h6 style='text-align:left;'><b>Net FDI Inflows by Component</b></h6>")
+                        ),
+                        ui.HTML("<p style='font-size:14px; color:black;'>Use the sidebar filters to generate the Net FDI Inflows by Component trends graph.</p>"),
+                        output_widget("fdi_component"),
+                        ui.HTML(
+                            "<p style='font-size:11px; color:gray; text-align:center;'>"
+                            "Source: International Monetary Fund (IMF), Balance of Payments"
+                            "</p>"
+                        ),
+                        ui.HTML(
+                            "<p style='font-size:11px; color:gray; text-align:center;'>"
+                            "Note: In some economies and years, the shares of FDI components "
+                            "(Equity, Debt Instruments, Reinvested Earnings) may exceed 100% or appear negative. "
+                            "This occurs because FDI inflows are measured on a net basis, which accounts for both new investments "
+                            "and disinvestments/withdrawals. As a result, large disinvestments in one component (e.g., equity) "
+                            "can make its share negative, while the other components may exceed 100% of net inflows."
+                            "</p>"
+                        ),
+                    ),
+                )
+            )
+
         ),
 
-        # MNE Activity Trends
+        # MNE Activity
         ui.nav_panel(
-            "MNE Activity Trends",
+            "MNE Activity",
             ui.HTML("""<div style="text-align:center; margin-top:20px;">
                         <h2><b>MNE Activity Trends</b></h2>
                         <p style="font-size:16px;">Placeholder for MNE Activity Trends graphs and controls.</p>
                     </div>""")
         ),
 
-        # # --- Greenfield FDI (KEPT but HIDDEN) ---
-        # # give the tab a fixed value="greenfield" so CSS can target it
-        # ui.nav_panel(
-        #     "Greenfield FDI",
-        #     ui.HTML('<div style="text-align:center; margin-top:20px;"><h1><b>Greenfield FDI</b></h1></div>'),
-
-        # # ---- Inward Greenfield FDI ----
-        #     ui.card(
-        #         ui.card_header(ui.HTML('<div style="text-align:left;"><h2><b>Inward Greenfield FDI</b></h2></div>')),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Inflows</h3></div>'),
-        #             ui.input_select("region10", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy10", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph10"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Inflows in Services within the Manufacturing Sector</h3></div>'),
-        #             ui.input_select("region11", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy11", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph11"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Inflows by Business Function in the Services and Manufacturing Sectors</h3></div>'),
-        #             ui.input_select("region12", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy12", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph12"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Inflows in High-Technology Activities in the Manufacturing Sector</h3></div>'),
-        #             ui.input_select("region13", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy13", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph13"),
-        #         ),
-        #     ),
-
-        # # ---- Outward Greenfield FDI ----
-        #     ui.card(
-        #         ui.card_header(ui.HTML('<div style="text-align:left;"><h2><b>Outward Greenfield FDI</b></h2></div>')),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Outflows</h3></div>'),
-        #             ui.input_select("region14", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy14", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph14"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Outflows in Services within the Manufacturing Sector</h3></div>'),
-        #             ui.input_select("region15", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy15", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph15"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Outflows by Business Function in the Services and Manufacturing Sectors</h3></div>'),
-        #             ui.input_select("region16", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy16", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph16"),
-        #         ),
-        #         ui.p(
-        #             ui.HTML('<div style="text-align:left;"><h3>Greenfield FDI Outflows in High-Technology Activities</h3></div>'),
-        #             ui.input_select("region17", "Select Region", choices=sorted_regions, selected=sorted_regions[0]),
-        #             ui.input_select("economy17", "Select an Economy", choices=[], multiple=True),
-        #             output_widget("fdi_graph17"),
-        #         ),
-        #     ),
-
-        #     # keep this value so the CSS rule can hide the tab
-        #     value="greenfield",
-        #     ),
-
         # Policies
-        ui.nav_panel("Policies", ui.HTML("<p>Policies content goes here.</p>")),
+        ui.nav_panel(
+            "Investment Policy",
+            ui.HTML("""<div style="text-align:center; margin-top:20px;">
+                        <h2><b>Investment Policy</b></h2>
+                        <p style="font-size:16px;">Placeholder for Investment Policy graphs and controls.</p>
+                    </div>""")
+        ),
 
         # Incentives
-        ui.nav_panel("Incentives", ui.HTML("<p>Incentives content goes here.</p>")),
+        ui.nav_panel(
+            "Incentives",
+            ui.HTML("""<div style="text-align:center; margin-top:20px;">
+                        <h2><b>CIT Incentives</b></h2>
+                        <p style="font-size:16px;">Placeholder for CIT Incentives graphs and controls.</p>
+                    </div>""")
+        ),
 
         # FDI Spillover Toolkit
-        ui.nav_panel("FDI Spillover Toolkit", ui.HTML("<p>FDI Spillover Toolkit content goes here.</p>")),
-
-        # Data Sources
         ui.nav_panel(
-            "Data Sources",
-            ui.HTML("""
-                <div>
-                    <h1>UN Trade and Development (UNCTAD)</h1>
-                    <p>This is placeholder text UNCTAD.</p>
-                    <h1>International Monetary Fund (IMF)</h1>
-                    <p>This is placeholder text for IMF.</p>
-                    <h1>fDi Markets</h1>
-                    <p>This is placeholder text for fDi Markets.</p>
-                </div>
-            """)
+            "Spillovers",
+            ui.HTML("""<div style="text-align:center; margin-top:20px;">
+                        <h2><b>Spillovers</b></h2>
+                        <p style="font-size:16px;">Placeholder for FDI Spillovers graphs and controls.</p>
+                    </div>""")
         ),
 
         # WB Investment Climate Hub
@@ -308,71 +303,174 @@ app_ui = ui.page_fluid(
         ),
 
         # About
-
         ui.nav_panel(
             "About",
-            ui.HTML("""
-                <div style="margin-top:20px;"> 
-                    <h3 style="font-weight:bold;">What is Foreign Direct Investment (FDI)?</h3>
-                    <p style="font-size:16px;">
-                        Foreign direct investment reflects the objective of establishing a lasting interest by a resident 
-                        enterprise in one economy (direct investor) in an enterprise (direct investment enterprise) that is 
-                        resident in an economy other than that of the direct investor (OECD Benchmark Definition of Foreign 
-                        Direct Investment). 
-                    </p>
-                    <p style="font-size:16px;">
-                        The lasting interest implies the existence of a long-term relationship between the 
-                        direct investor and the direct investment enterprise and a significant degree of influence on the 
-                        management of the enterprise. The direct or indirect ownership of 10% or more of the voting power 
-                        of an enterprise resident in one economy by an investor resident in another economy is evidence of 
-                        such a relationship (Fifth Edition, paragraph 65).
-                    </p>
+            ui.div(
+                ui.div(style="margin-top:20px;"),
+                ui.card(
+                    ui.card_header(
+                     ui.HTML("<h6 style='text-align:left;'><b>What is the IMAT Dashboard?</b></h6>")    
+                    ),
+                    ui.HTML("""
+                        <p>
+                            The Investment and Multinational Activity Trends (IMAT) Dashboard is a centralized 
+                            dashboard for WBG staff to quickly access, visualize, and analyze data on foreign 
+                            direct investment (FDI), multinational enterprise (MNE) activities, and investment 
+                            policies. The objective is to make it easier for staff to identify barriers to 
+                            investment in client countries and form priority areas for deeper analysis 
+                            (e.g., at the firm- and/or sector-levels) to promote early engagement with client 
+                            countries in facilitating private investment. The IMAT Dashboard is currently for 
+                            internal use only.
+                        </p>
+                    """),
+                ),
 
-                    <h3 style="font-weight:bold;">What is a Multinational Enterprise (MNE)?</h3>
-                    <p style="font-size:16px;">
-                        Legal entity that has at least one non-resident affiliate or branch, and exercises
-                        control over its affiliate(s) or branch(es) either directly—by having over 50% of the voting power in the
-                        unit—or by indirect transmission of control. The multinational enterprise is the ultimate controlling parent—
-                        the direct investor at the top of the control chain.
-                    </p>
+                ui.card(
+                    ui.card_header(
+                     ui.HTML("<h6 style='text-align:left;'><b>What Can You Find on the IMAT Dashboard?</b></h6>")    
+                    ),
+                    ui.HTML("""
+                        <p>
+                            WBG staff can obtain an overview of countries’ private investment activities and trends, 
+                            MNE activities, and FDI spillovers. Staff will be able to benchmark countries against 
+                            elected peers, visualize the distribution of FDI flows and stocks by country and/or over 
+                            time, disaggregate balance of payments (BOP) accounts into their constituent components 
+                            (e.g., equity, reinvested earnings, and intra-company debt), and aggregate multinational 
+                            enterprise activities (e.g., output, employment and number of enterprises). 
+                            Functions to download customized charts and visuals are available as well.
+                        </p>
+                    """),
+                ),
+                
+                ui.card(
+                    ui.card_header(
+                     ui.HTML("<h6 style='text-align:left;'><b>What Can You <i>Not</i> Find on the IMAT Dashboard?</b></h6>")    
+                    ),
+                    ui.HTML("""
+                        <p>
+                            The IMAT Dashboard serves as a “first scan” diagnostic tool to assess a country’s 
+                            investment climate and initiate dialogue with policymakers on driving evidence-based 
+                            policy reform. To access more granular firm-level and sector-specific analyses and bridge 
+                            high-level investment trends with actionable reform agendas, please contact the WBG’s 
+                            Investment Climate team (ETIIC) at <b>[CONTACT INFO]</b>. The Investment Climate is well equipped 
+                            to support client countries in diagnosing bottlenecks to investment and designing policy 
+                            reforms to create an investment climate that is conducive to private investment.
+                        </p>
+                    """),
+                ),
 
-                    <h3 style="font-weight:bold;">What are MNE activities?</h3>
-                    <p style="font-size:16px;">
-                    An MNE exists when a resident investor in one economy establishes a “lasting interest” in an enterprise located in another economy, 
-                    generally demonstrated by owning at least 10% of the voting power. This lasting interest implies a long-term relationship and a 
-                    significant degree of influence over the management of the foreign enterprise. MNE activities therefore include setting up or 
-                    acquiring subsidiaries, branches, or joint ventures abroad, as well as expanding production, services, or sales across multiple countries.
-                    </p>
-                    <p style="font-size:16px;">
-                    These activities go beyond the initial equity stake: they also encompass reinvested earnings, intra-company loans, 
-                    and the coordination of operations across affiliates. In practice, MNEs integrate and internalize transactions 
-                    such as capital, technology, and knowledge transfers within their global corporate network, 
-                    optimizing costs, efficiency, and market access. As such, MNE activities under the OECD framework are 
-                    not limited to investment flows, but extend to the full range of cross-border economic operations and management structures 
-                    that tie together global value chains.
-                    </p>
+                ui.card(
+                    ui.card_header(
+                        ui.HTML("<h6 style='text-align:left;'><b> What is the current version of the IMAT Dashboard?</b></h6>")
+                    ),
+                    ui.HTML("""
+                        <p>
+                            Current release: Dashboard Version 1.0 (last updated September 26, 2025).
+                        </p>
+                    """),
+                ),
 
-                    <h3 style="font-weight:bold;">What does the IMAT Dashboard include?</h3>
-                    <p style="font-size:16px;">Definition</p>
+                ui.card(
+                    ui.card_header(
+                     ui.HTML("<h6 style='text-align:left;'><b>Definitions</b></h6>")    
+                    ),
 
-                    <h3 style="font-weight:bold;">How is the IMAT Dashboard organized?</h3>
-                    <p style="font-size:16px;">Definition</p>
+                    ui.HTML("""
 
-                    <h3 style="font-weight:bold;">How can the IMAT Dashboard be used?</h3>
-                    <p style="font-size:16px;">Definition</p>
+                            <h6 style="font-weight:bold;">Foreign Direct Investment (FDI)</h6>
+                            <p>
+                                Foreign direct investment reflects the objective of establishing a <em>lasting interest</em> by a resident 
+                                enterprise in one economy (direct investor) in an enterprise (direct investment enterprise) that is 
+                                resident in an economy other than that of the direct investor (OECD Benchmark Definition of Foreign 
+                                Direct Investment).
+                            </p>
+                            <p>
+                                The lasting interest implies the existence of a long-term relationship between the 
+                                direct investor and the direct investment enterprise and a significant degree of influence on the 
+                                management of the enterprise. The direct or indirect ownership of 10% or more of the voting power 
+                                of an enterprise resident in one economy by an investor resident in another economy is evidence of 
+                                such a relationship (Fifth Edition, paragraph 65).
+                            </p>
 
-                    <h3 style="font-weight:bold;">Why do we need the IMAT Dashboard?</h3>
-                    <p style="font-size:16px;">Definition</p>
+                            <h6 style="font-weight:bold;">Gross Fixed Capital Formation</h6>
+                            <p>
+                                Acquisitions of fixed assets, net of disposals, during the accounting period. This includes 
+                                specified expenditures on services that enhance the value of non-produced assets. 
+                                (OECD Benchmark Definition of Foreign Direct Investment, Fifth Edition)
+                            </p>
 
-                    <h3 style="font-weight:bold;">What is the current version of the Dashboard?</h3>
-                    <p style="font-size:16px;">Definition</p>
+                            <h6 style="font-weight:bold;">Inward FDI Flow</h6>
+                            <p>
+                                According to the OECD, inward FDI flows represent the value of cross-border direct investment transactions 
+                                received by a reporting economy within a given year. This indicator can be further disaggregated by source 
+                                economy and may also be expressed on a net basis when accounting for investment withdrawals.
+                            </p>
 
-                </div>
-            """)
+                            <h6 style="font-weight:bold;">Inward FDI Stock</h6>
+                            <p>
+                                According to the OECD, inward FDI stock represents the total accumulated value of foreign direct investment held in a reporting economy at a given point in time. 
+                            </p>
+
+                            <h6 style="font-weight:bold;">Multinational Enterprise (MNE)?</h6>
+                            <p>
+                                A multinational enterprise is a legal entity that has at least one non-resident affiliate or branch, 
+                                and exercises control over its affiliate(s) or branch(es) either directly—by holding over 50% of the 
+                                voting power—or indirectly through transmission of control. The MNE is the ultimate controlling parent— 
+                                the direct investor at the top of the control chain.
+                            </p>
+
+                            <h6 style="font-weight:bold;">Multinational Enteprise (MNE) Activty</h6>
+                            <p>
+                                An MNE exists when a resident investor in one economy establishes a lasting interest in an enterprise located in another economy, 
+                                generally demonstrated by owning at least 10% of the voting power. This implies a long-term relationship and a significant degree 
+                                of influence over management of the foreign enterprise.
+                            </p>
+                            <p>
+                                MNE activities include setting up or acquiring subsidiaries, branches, or joint ventures abroad, as well as expanding production, 
+                                services, or sales across multiple countries. They also encompass reinvested earnings, intra-company loans, and the coordination 
+                                of operations across affiliates. In practice, MNEs internalize transactions such as capital, technology, and knowledge transfers 
+                                within their global corporate network, optimizing costs, efficiency, and market access.
+                            </p>
+
+                            <h6 style="font-weight:bold;">Outward FDI Flow</h6>
+                            <p>
+                                XXXX
+                            </p>
+
+                            <h6 style="font-weight:bold;">Outward FDI Stock</h6>
+                            <p>
+                                XXXX
+                            </p>
+
+                    """),
+                ),
+                
+                ui.card(
+                    ui.card_header(
+                    ui.HTML("<h6 style='text-align:left;'><b>Data Sources</b></h6>")    
+                    ),
+
+                    ui.HTML(""" 
+                            <h6 style="font-weight:bold;">United Nations Conference on Trade and Development (UNCTAD)</h6>
+                            <p>
+                                The United Nations Conference Trade and Development (UNCTAD) complies and publishes data on Foreign
+                                Direct Investment (FDI) for more than 200 economies worldwide. UNCTAD reports both flows (new investment
+                                moving in or out during a given period) and stocks (the accumulated value of investment at a point in time).
+                                The data are widely used to track global and regional investment trends. 
+                            </p>
+                            <p>
+                                The main value of UNCTAD's FDI data lies in its broad geographical coverage, long time series, and 
+                                disaggregation by type and region. It is important to note that figures may vary across economies 
+                                due to differences in reporting practices, possible revisions, and the presence of pass-through 
+                                economies that channel investment flows. Despite these limitations, UNCTAD's databases and the 
+                                <i>World Investment Report</i>, which is informed by this data, remain leading references for 
+                                policymakers, researchers, and analysts studying international investment.
+                            </p>
+                    """),
+                ),
+            ),
         ),
-
-        id="main_tabs",
-        
+    id="main_tabs"
     ),
 
     # Add JavaScript redirect script
@@ -502,7 +600,7 @@ app_ui = ui.page_fluid(
     const labels = document.querySelectorAll("#year_slider .irs-grid-text");
     labels.forEach(l => l.textContent = l.textContent.replace(",", ""));
     });
-    """)
+    """),
 )
 
 
@@ -517,7 +615,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 <h2>🌐 Welcome to the IMAT Dashboard</h2>
                 <p>The IMAT Dashboard 📊 is a product of the Investment Climate Global Unit, 
                 providing an interactive view of investment and multinational activity trends
-                across countries, regions, and sectors.</p>
+                across economies, regions, and sectors.</p>
                 <p>🧭 Use the navigation tabs to explore different topics, 
                 and apply filters to tailor the data to your needs.</p>
                 <p>ℹ️ For background and methodology, visit the <b>About</b> tab.</p>
@@ -548,9 +646,10 @@ def server(input: Inputs, output: Outputs, session: Session):
         df = df.set_index("ecode_dest")
 
         # Compute min/max and build colormap
-        vmin, vmax = df["net_inflow"].min(), df["net_inflow"].max()
+        vmin, vmax = df["net_inflow_pct"].min(), df["net_inflow_pct"].max()
         cmap = linear.PuBuGn_09.scale(vmin, vmax)
-        cmap.caption = "FDI Inflow (USD millions)"
+        cmap.caption = "FDI Inflow (Percentile Ranking)"
+        cmap = cmap.to_step(index=[0, 25, 50, 75, 100])
 
         # Convert df to GeoJSON and add popup + fillColor property
         geojson_data = json.loads(df.to_json())
@@ -565,13 +664,61 @@ def server(input: Inputs, output: Outputs, session: Session):
                 inflow_str = f"{inflow:,.0f}"
                 fillColor = cmap(inflow)
 
+            # Build popup content
             props["popup"] = (
-                f"<div style='font-size:11px; line-height:1.2; padding:2px;'>"
+                f"<div style='font-size:11px; line-height:1.3; padding:6px; "
+                f"width:380px; white-space:normal;'>"
+
                 f"<b>{props.get('economy','')}</b><br>"
                 f"Year: {year}<br>"
-                f"Net inflow: {inflow_str}"
+                f"Net inflow (billions USD): "
+                f"{'N/A' if inflow is None or pd.isna(inflow) else f'{inflow:.1f}'}<br><br>"
+
+                # Table layout for sources, top source, and MNEs
+                f"<table style='width:100%; font-size:11px;'>"
+                f"<tr>"
+                f"<td><b>Sources:</b> "
+                f"{'N/A' if pd.isna(props.get('sources')) else int(props.get('sources'))}</td>"
+                f"<td><b>Top Source:</b> {props.get('top_source','N/A')}</td>"
+                f"</tr>"
+                f"<tr>"
+                f"<td colspan='2'><b>MNEs:</b> "
+                f"{'N/A' if pd.isna(props.get('extensive_total')) else format(int(props.get('extensive_total')), ',')}</td>"
+                f"</tr>"
+                f"</table><br>"
+
+                # Shares in two columns
+                f"<b>Share of Net Inflow FDI by Component</b><br>"
+                f"<table style='width:100%; font-size:11px;'>"
+                f"<tr>"
+                f"<td>Debt Instruments: "
+                f"{'N/A' if pd.isna(props.get('share_debt_instruments')) else f'{props.get('share_debt_instruments'):.1f}'}%</td>"
+                f"<td>Equity: "
+                f"{'N/A' if pd.isna(props.get('share_equity')) else f'{props.get('share_equity'):.1f}'}%</td>"
+                f"</tr>"
+                f"<tr>"
+                f"<td colspan='2'>Reinvested Earnings: "
+                f"{'N/A' if pd.isna(props.get('share_reinv_earnings')) else f'{props.get('share_reinv_earnings'):.1f}'}%</td>"
+                f"</tr>"
+                f"</table><br>"
+
+                # Business Ready in table
+                f"<b>B-Ready Business Entry Scores</b><br>"
+                f"<table style='width:100%; font-size:11px;'>"
+                f"<tr>"
+                f"<td>Regulatory Quality: {props.get('bentry_reg_quality','N/A')}</td>"
+                f"<td>Digital Services: {props.get('bentry_dig_trans','N/A')}</td>"
+                f"</tr>"
+                f"<tr>"
+                f"<td colspan='2'>Operational Efficiency: {props.get('bentry_op_efficiency','N/A')}</td>"
+                f"</tr>"
+                f"</table><br>"
+
+                # Note
+                f"<i>Note: If 'None' of 'N/A' appears, it means the data is unavailable.</i>"
                 f"</div>"
             )
+
             props["fillColor"] = fillColor
 
         # --- One reusable HTML widget for popups ---
@@ -591,7 +738,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         # --- Map ---
         m = Map(
             center=(0.0, 0.0),
-            zoom=2,
+            zoom=2.75,
             basemap=basemaps.CartoDB.Positron,
             layout=Layout(width="100%", height="695px"),
         )
@@ -613,31 +760,31 @@ def server(input: Inputs, output: Outputs, session: Session):
     ##################################
     ## 3. FDI Trends
     indicator_map = {
-        "US$ Millions at Current Prices": {
+        "US$ billions (current prices)": {
             ("Inward", "Flow"): "fdi_inward_flow",
             ("Outward", "Flow"): "fdi_outward_flow",
             ("Inward", "Stock"): "fdi_inward_stock",
             ("Outward", "Stock"): "fdi_outward_stock",
         },
-        "% Change from 2000 (US$ Million)": {
+        "% change from 2000 baseline (US$ billions)": {
             ("Inward", "Flow"): "fdi_inward_flow_pct_change",
             ("Outward", "Flow"): "fdi_outward_flow_pct_change",
             ("Inward", "Stock"): "fdi_inward_stock_pct_change",
             ("Outward", "Stock"): "fdi_outward_stock_pct_change",
         },
-        "% of Global Total": {
+        "Share of Global Total": {
             ("Inward", "Flow"): "fdi_pct_inward_flow",
             ("Outward", "Flow"): "fdi_pct_outward_flow",
             ("Inward", "Stock"): "fdi_pct_inward_stock",
             ("Outward", "Stock"): "fdi_pct_outward_stock",
         },
-        "% of Gross Domestic Product": {
+        "Share of Gross Domestic Product (GDP)": {
             ("Inward", "Flow"): "fdi_gdp_inward_flow",
             ("Outward", "Flow"): "fdi_gdp_outward_flow",
             ("Inward", "Stock"): "fdi_gdp_inward_stock",
             ("Outward", "Stock"): "fdi_gdp_outward_stock",
         },
-        "% of Gross Fixed Capital Formation": {
+        "Share of Gross Fixed Capital Formation (GFCF)": {
             ("Inward", "Flow"): "fdi_fkf_inward_flow",
             ("Outward", "Flow"): "fdi_fkf_outward_flow",
             ("Inward", "Stock"): "fdi_fkf_inward_stock",
@@ -658,7 +805,21 @@ def server(input: Inputs, output: Outputs, session: Session):
         var = indicator_map[indicator][(direction, fdi_type)]
 
         # Filter dataframe
-        df = fdi_trends[fdi_trends["economy"].isin(economies)]
+        df = fdi_trends[fdi_trends["economy"].isin(economies)].copy()
+
+        # Custom formatting rules for hover
+        if indicator == "US$ billions (current prices)":
+            # Always 1 decimal, with comma separator
+            df.loc[:, "hover_val"] = df[var].apply(
+                lambda v: f"{v:,.1f}" if pd.notna(v) else "NA"
+            )
+        else:
+            # All % indicators 
+            def fmt_pct(v):
+                if pd.isna(v):
+                    return "NA"
+                return f"{v:,.2f}%" if abs(v) < 1 else f"{v:,.1f}%"
+            df.loc[:, "hover_val"] = df[var].apply(fmt_pct)
 
         # Graph
         fig = px.line(
@@ -668,6 +829,53 @@ def server(input: Inputs, output: Outputs, session: Session):
             color="economy",
             title=f"{indicator} ({direction} {fdi_type})",
             labels={"year": "Year", var: indicator},
+            color_discrete_sequence=px.colors.qualitative.Safe,
+            custom_data=["hover_val"], # send performatted values to hovertemplate
+        )
+
+        # Apply hover template
+        fig.update_traces(
+            mode="lines+markers",
+            hovertemplate=(
+                "<b>%{fullData.name}</b><br>"
+                "Year: %{x}<br>"
+                f"{indicator}: " + "%{customdata[0]}<extra></extra>"              
+            )
+        )
+
+        # Clean Layout
+        fig.update_layout(
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                showgrid=False,
+                gridcolor='lightgray',
+                title=None
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="lightgray"
+            ),
+            legend=dict(
+                title="Economy",
+                orientation="v",
+                x=1.05,
+                y=0.5,
+                xanchor="left",
+                yanchor="middle"
+            ),
+            margin=dict(l=40, r=40, t=60, b=40),
+            title_x=0.5,
+            title_y=0.95,
+            title_font=dict(size=16, family="Segoe UI", color="black")
+        )
+
+        # Horizontal line at y=0
+        fig.add_hline(
+            y=0,
+            line_dash="solid",
+            line_color="black",
+            opacity=0.9
         )
 
         return fig
@@ -685,10 +893,10 @@ def server(input: Inputs, output: Outputs, session: Session):
         # Select dataset
         if fdi_type == "Flow":
             df = bilateral_inflow.copy()
-            econ_label = "Net Inflow (USD Millions)"
+            econ_label = "Net Inflow (USD Billions)"
         else:
             df = bilateral_instock.copy()
-            econ_label = "Inward Stock (USD Millions)"
+            econ_label = "Inward Stock (USD Billions)"
 
         # Filter by economy + year
         df_plot = df[(df["economy_dest"] == economy) & (df["year"] == year)].copy()
@@ -715,7 +923,7 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         fig.update_traces(
             hovertemplate="<b>%{label}</b><br>" +
-                        econ_label + ": %{value:,.1f}<br>" +
+                        econ_label + ": %{value:,.2f}<br>" +
                         "Share: %{customdata[0]:.1%}<extra></extra>",
             textinfo="percent",
             textposition="inside",
@@ -751,10 +959,10 @@ def server(input: Inputs, output: Outputs, session: Session):
         # Select dataset
         if fdi_type == "Flow":
             df = bilateral_outflow.copy()
-            econ_label = "Net Outflow (USD Millions)"
+            econ_label = "Net Outflow (USD Billions)"
         else:
             df = bilateral_outstock.copy()
-            econ_label = "Outward Stock (USD Millions)"
+            econ_label = "Outward Stock (USD Billions)"
 
         # Filter by economy + year
         df_plot = df[(df["economy_source"] == economy) & (df["year"] == year)].copy()
@@ -781,7 +989,7 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         fig.update_traces(
             hovertemplate="<b>%{label}</b><br>" +
-                        econ_label + ": %{value:,.1f}<br>" +
+                        econ_label + ": %{value:,.2f}<br>" +
                         "Share: %{customdata[0]:.1%}<extra></extra>",
             textinfo="percent",
             textposition="inside",
@@ -801,800 +1009,106 @@ def server(input: Inputs, output: Outputs, session: Session):
             margin=dict(l=20, r=100, t=80, b=60),
             autosize=True,
             title=dict(
-                text=f"Sources of Outward FDI {fdi_type} from {economy} ({year})",
+                text=f"Destinations of Outward FDI {fdi_type} from {economy} ({year})",
                 x=0.5, xanchor="center", yanchor="top"
             )
         )
         return fig
+    
+    ##################################
+    ## 5. FDI Components
 
-#     #########################
-    # Graph 9 - FDI Composition (Equity, Reinvestment, Debt)
-    @reactive.effect
-    def update_economies9():
-        selected_region = input.region9()
-        filtered_economies = graph9[graph9["region_dest"] == selected_region]["economy_dest"].unique()
-        ui.update_select("economy9", choices=sorted(filtered_economies.tolist()), selected=None)
+    # Component Labels Mapping
+    component_labels = {
+    "share_debt_instruments": "Share of Debt Instruments",
+    "share_equity": "Equity",
+    "share_reinv_earnings": "Reinvested Earnings"
+    }
 
     @render_widget
-    def fdi_graph9():
-        selected_economies = input.economy9()
-        selected_region = input.region9()
+    def fdi_component():
+        # Get inputs
+        economy = input.economy_component()
+        selected_components = input.component()
 
-        if not selected_economies:
-            return px.area(title="Select at least one economy to view trends")
-        
-        # Filter data for selected economies from the transformed melted graph
-        economy_data = graph9[graph9["economy_dest"].isin(selected_economies)]
+        # Filter dataset
+        df_filtered = fdi_components[
+            (fdi_components["economy"] == economy) &
+            (fdi_components["component"].isin(selected_components))
+        ].copy()
 
-        # Ensure the correct order of the components in the 'component' column
-        component_order = ["debt_instruments", "equity", "reinv_earn"]
+        # If no data matches, return empty figure with message
+        if df_filtered.empty:
+            fig = px.line()
+            fig.add_annotation(
+                text="No data available for this selection",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=14, color="red")
+            )
+            fig.update_layout(template="plotly_white")
+            return fig
 
-        # Create a mapping for readable component names
-        label_map = {
-            "debt_instruments": "Debt Instruments",
-            "equity": "Equity",
-            "reinv_earn": "Reinvested Earnings"
-        }
+        # Map components to human-readable labels
+        df_filtered["component"] = df_filtered["component"].map(component_labels)
 
-        # Replace internal labels with readable ones
-        economy_data["component"] = economy_data["component"].map(label_map)
-
-        # Define the new display order
-        component_order = ["Debt Instruments", "Equity", "Reinvested Earnings"]
-
-        # Create the stacked bar chart
-        fig = px.bar(
-            economy_data,
+        # Create graph
+        fig = px.line(
+            df_filtered,
             x="year",
-            y="fdi_value", 
+            y="fdi_value",
             color="component",
-            barmode="relative",  # Stack bars (handles positive & negative)
-            category_orders={"component": component_order},
-            color_discrete_map={
-                "Debt Instruments": "blue",
-                "Equity": "orange",
-                "Reinvested Earnings": "gray"
-            },
-            labels={"fdi_value": "FDI Value (USD)", "year": "Year"}
+            title=f"Net FDI Inflows by Component - {economy}",
+            labels={"year": "Year", "fdi_value": "Share (%)"},
+            color_discrete_sequence=px.colors.qualitative.Safe,
+            custom_data=["fdi_value"],  # to format hover
         )
 
-        fig.update_layout(
-            plot_bgcolor="rgba(0,0,0,0)", 
-            paper_bgcolor="white",
-            xaxis=dict(
-                showline=True, 
-                linecolor="black", 
-                zeroline=False,
-                tickmode="array",
-                tickvals=sorted(economy_data["year"].unique()),
-                ticktext=[str(year) for year in sorted(economy_data["year"].unique())]
-            ),
-            yaxis=dict(
-                zeroline=True,
-                zerolinewidth=2,
-                zerolinecolor="black",
-                showline=True,
-                linecolor="black"
-            ),
-            #title={
-            #    'text': f"FDI Composition in {', '.join(selected_economies)}",
-            #    'y': 0.96,
-            #    'x': 0.5,
-            #    'xanchor': 'center',
-            #    'yanchor': 'top',
-            #    'font': dict(size=22)
-            #},
-            legend=dict(
-                orientation="h",
-                yanchor="top",
-                y=-0.35,
-                xanchor="center",
-                x=0.5,
-                tracegroupgap=5,
-                font=dict(size=12)
+        # Hover template
+        fig.update_traces(
+            mode="lines+markers",
+            hovertemplate=(
+                "<b>%{fullData.name}</b><br>"
+                "Year: %{x}<br>"
+                "Value: %{customdata[0]:,.2f}%<extra></extra>"
             )
         )
 
+        # Layout styling
+        fig.update_layout(
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                showgrid=False,
+                gridcolor="lightgray",
+                title=None
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="lightgray"
+            ),
+            legend=dict(
+                title="Component",
+                orientation="v",
+                x=1.05,
+                y=0.5,
+                xanchor="left",
+                yanchor="middle"
+            ),
+            margin=dict(l=40, r=40, t=60, b=40),
+            title_x=0.5,
+            title_y=0.95,
+            title_font=dict(size=16, family="Segoe UI", color="black")
+        )
+
+        # Horizontal reference line
+        fig.add_hline(
+            y=0,
+            line_dash="solid",
+            line_color="black",
+            opacity=0.9
+        )
+
         return fig
-
-    ######################### ######################### ######################### #########################
-    
-#     ################################
-#     # Graph 10 - Greenfield FDI Inflows
-#     @reactive.effect
-#     def update_economies10():
-#         selected_region = input.region10()
-#         filtered_economies = (
-#             graph10.loc[graph10["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy10", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget 
-#     def fdi_graph10():
-#         selected_economies = input.economy10()
-#         region = input.region10()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         selected_economies = selected_economies[:5]
-#         region_data = graph10[graph10["region_dest"] == region]
-#         region_stats = region_data.groupby("year")["capexusm"].agg(
-#             max_capexusm="max",
-#             min_capexusm="min",
-#             median_capexusm="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_dest"].isin(selected_economies)]
-            
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="capexusm",
-#             color="economy_dest",
-#             markers=True,
-#             labels={"economy_dest": "Destination"},
-#         )      
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Inflows in {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_capexusm"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median CapEx Flow"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph10["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="CapEx Flow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-    
-#     ####################################################################
-#     # Graph 11 - Grrenfield FDI Inflows in Services within Manufacturing
-#     @reactive.effect
-#     def update_economies11():
-#         selected_region = input.region11()
-#         filtered_economies = (
-#             graph11.loc[graph11["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy11", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph11():
-#         selected_economies = input.economy11()
-#         region = input.region11()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph11[graph11["economy_dest"].isin(selected_economies)]
-
-#         # Define your color gradient from light to dark blue
-#         serv_manu_colors = {
-#             "Services": "#4CAF50",         # Green
-#             "Manufacturing": "#9C27B0",  # Purple
-#             "Other Non-Services": "#FF9800", # Orange
-#         }
-
-#         fig = px.area(
-#             filtered_df,
-#             x="year",
-#             y="share_capex",  # Plot the share of capex
-#             color="serv_manu",
-#             color_discrete_map=serv_manu_colors,  # Different colors for Services, Manufacturing, and Other Non-Services
-#             labels={"share_capex": "Share of CapEx Flow",
-#                     "serv_manu": "Business Function",
-#                     "year": "Year"
-#             },
-#             hover_data=["serv_manu"],
-#             category_orders={
-#                 "serv_manu": [
-#                     "Services", 
-#                     "Manufacturing", 
-#                     "Other Non-Services"
-#                 ]
-#             },
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Inflow in Services within the Manufacturing Sector in {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph11["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Share of CapEx Flow", range=[0, 1])  # Y-axis represents percentage
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-
-#    ##################################################################################################
-#    # Graph 12 - Greenfield FDI Inflows by Business Function in the Services and Manufacturing Sectors
-#     @reactive.effect
-#     def update_economies12():
-#         selected_region = input.region12()
-#         filtered_economies = (
-#             graph12.loc[graph12["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy12", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph12():
-#         selected_economies = input.economy12()
-#         region = input.region12()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph12[graph12["economy_dest"].isin(selected_economies)]
-
-#         fig = px.line(
-#             filtered_df,
-#             x="year",
-#             y="capexusm",
-#             color="businessfunction",
-#             markers=True,
-#             labels={"economy_dest": "Destination",
-#                     "businessfunction": "Business Function"},
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Inflow by Business Function in Services and Manufacturing in {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-        
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph12["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="CapEx Flow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-    
-#     #################################################################
-#     # Graph 13 - Greenfield FDI Inflows in High-Technology Activities
-#     @reactive.effect
-#     def update_economies13():
-#         selected_region = input.region13()
-#         filtered_economies = (
-#             graph13.loc[graph13["region_dest"] == selected_region, "economy_dest"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy13", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph13():
-#         selected_economies = input.economy13()
-#         region = input.region13()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph13[graph13["economy_dest"].isin(selected_economies)]
-
-#         # Define your color gradient from light to dark blue
-#         blue_gradient = {
-#             "Low-technology": "#cce5ff",         # Lightest blue
-#             "Medium-low-technology": "#99ccff",  # A bit darker
-#             "Medium-high-technology": "#3399ff", # Darker
-#             "High-technology": "#0066cc"         # Darkest blue
-#         }
-
-#         # Create the stacked bar chart
-#         fig = px.bar(
-#             filtered_df,
-#             x="year",
-#             y="percentage",  # The percentage share of capexUSm
-#             color="man_tech", 
-#             labels={
-#                 "percentage": "Percentage of Total CapEx Flow",
-#                 "man_tech": "Technology",
-#                 "year": "Year"
-#             },
-#             hover_data=["man_tech"],  # Show relevant info on hover
-#             category_orders={
-#                 "man_tech": [
-#                     "Low-technology", 
-#                     "Medium-low-technology", 
-#                     "Medium-high-technology", 
-#                     "High-technology"
-#                 ]
-#             },  # Ensure consistent order for man_tech categories
-#             color_discrete_map=blue_gradient,  # Apply custom blue gradient
-#             barmode="stack",  # Stack the bars
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Inflow in Manufacturing High-Tech Activities in {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph13["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Share of CapEx Flow", range=[0, 100])  # Y-axis is percentage, 0-100%
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-
-#     ################################
-#     # Graph 14 - Greenfield FDI Outflows
-#     @reactive.effect
-#     def update_economies14():
-#         selected_region = input.region14()
-#         filtered_economies = (
-#             graph14.loc[graph14["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy14", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget 
-#     def fdi_graph14():
-#         selected_economies = input.economy14()
-#         region = input.region14()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         selected_economies = selected_economies[:5]
-#         region_data = graph14[graph14["region_source"] == region]
-#         region_stats = region_data.groupby("year")["capexusm"].agg(
-#             max_capexusm="max",
-#             min_capexusm="min",
-#             median_capexusm="median"
-#         ).reset_index()
-#         economy_data = region_data[region_data["economy_source"].isin(selected_economies)]
-            
-#         fig = px.line(
-#             economy_data,
-#             x="year",
-#             y="capexusm",
-#             color="economy_source",
-#             markers=True,
-#             labels={"economy_source": "Source"},
-#         )      
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Outflows from {', '.join(selected_economies)}",
-#             #    'y': 0.9,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=22)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         # Add a horizontal line at y=0
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=region_stats["year"],
-#                 y=[0] * len(region_stats),
-#                 mode="lines",
-#                 line=dict(color="black", width=1, dash="solid"),
-#                 name="Zero Line",
-#                 showlegend=False
-#             )
-#         )
-
-#         # Add median line for the region
-#         #fig.add_trace(
-#         #    go.Scatter(
-#         #        x=region_stats["year"],
-#         #        y=region_stats["median_capexusm"],
-#         #        mode="lines",
-#         #        line=dict(color='gray', dash="dash", width=2),
-#         #        name="Regional Median CapEx Flow"
-#         #    )
-#         #)
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph14["year"].unique()),
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="CapEx Flow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-    
-#     ####################################################################
-#     # Graph 15 - Greenfield FDI Outflows in Services within Manufacturing
-#     @reactive.effect
-#     def update_economies15():
-#         selected_region = input.region15()
-#         filtered_economies = (
-#             graph15.loc[graph15["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy15", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph15():
-#         selected_economies = input.economy15()
-#         region = input.region15()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph15[graph15["economy_source"].isin(selected_economies)]
-
-#         # Define your color gradient from light to dark blue
-#         serv_manu_colors = {
-#             "Services": "#4CAF50",         # Green
-#             "Manufacturing": "#9C27B0",  # Purple
-#             "Other Non-Services": "#FF9800", # Orange
-#         }
-
-#         fig = px.area(
-#             filtered_df,
-#             x="year",
-#             y="share_capex",  # Plot the share of capex
-#             color="serv_manu",
-#             color_discrete_map=serv_manu_colors,  # Different colors for Services, Manufacturing, and Other Non-Services
-#             labels={"share_capex": "Share of CapEx Flow",
-#                     "serv_manu": "Business Function",
-#                     "year": "Year"
-#             },
-#             hover_data=["serv_manu"],
-#             category_orders={
-#                 "serv_manu": [
-#                     "Services", 
-#                     "Manufacturing", 
-#                     "Other Non-Services"
-#                 ]
-#             },
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Outflow in Services within the Manufacturing Sector from {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph15["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Share of CapEx Flow", range=[0, 1])  # Y-axis represents percentage
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-
-#     ##################################################################################################
-#     # Graph 16 - Greenfield FDI Outflows by Business Function in the Services and Manufacturing Sectors
-#     @reactive.effect
-#     def update_economies16():
-#         selected_region = input.region16()
-#         filtered_economies = (
-#             graph16.loc[graph16["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy16", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph16():
-#         selected_economies = input.economy16()
-#         region = input.region16()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph16[graph16["economy_source"].isin(selected_economies)]
-
-#         fig = px.line(
-#             filtered_df,
-#             x="year",
-#             y="capexusm",
-#             color="businessfunction",
-#             markers=True,
-#             labels={"economy_dest": "Destination",
-#                     "businessfunction": "Business Function"},
-#         )
-
-#         fig.update_layout(
-#             #title={
-#             #    'text': f"Greenfield FDI Outflow by Business Function in Services and Manufacturing from {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-        
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph16["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="CapEx Flow (in USD Millions)")
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig
-
-#     #################################################################
-#     # Graph 17 - Greenfield FDI Outflows in High-Technology Activities
-#     @reactive.effect
-#     def update_economies17():
-#         selected_region = input.region17()
-#         filtered_economies = (
-#             graph17.loc[graph17["region_source"] == selected_region, "economy_source"]
-#             .dropna()
-#             .unique()
-#         )
-#         ui.update_select("economy17", choices=sorted(filtered_economies.tolist()), selected=None)
-
-#     @render_widget
-#     def fdi_graph17():
-#         selected_economies = input.economy17()
-#         region = input.region17()
-
-#         if not selected_economies:
-#             return px.line(title="Select at least one economy to view trends")
-        
-#         if isinstance(selected_economies, str):
-#             selected_economies = [selected_economies]
-
-#         filtered_df = graph17[graph17["economy_source"].isin(selected_economies)]
-
-#         # Define your color gradient from light to dark blue
-#         blue_gradient = {
-#             "Low-technology": "#cce5ff",         # Lightest blue
-#             "Medium-low-technology": "#99ccff",  # A bit darker
-#             "Medium-high-technology": "#3399ff", # Darker
-#             "High-technology": "#0066cc"         # Darkest blue
-#         }
-
-#         # Create the stacked bar chart
-#         fig = px.bar(
-#             filtered_df,
-#             x="year",
-#             y="percentage",  # The percentage share of capexUSm
-#             color="man_tech", 
-#             labels={
-#                 "percentage": "Percentage of Total CapEx Flow",
-#                 "man_tech": "Technology",
-#                 "year": "Year"
-#             },
-#             hover_data=["man_tech"],  # Show relevant info on hover
-#             category_orders={
-#                 "man_tech": [
-#                     "Low-technology", 
-#                     "Medium-low-technology", 
-#                     "Medium-high-technology", 
-#                     "High-technology"
-#                 ]
-#             },  # Ensure consistent order for man_tech categories
-#             color_discrete_map=blue_gradient,  # Apply custom blue gradient
-#             barmode="stack",  # Stack the bars
-#         )
-
-#         fig.update_layout(
-#             # title={
-#             #    'text': f"Greenfield FDI Outflow in Manufacturing High-Tech Activities from {', '.join(selected_economies)}",
-#             #    'y': 0.96,  # vertical position
-#             #    'x': 0.5,  # horizontal center
-#             #    'xanchor': 'center',
-#             #    'yanchor': 'top',
-#             #    'font': dict(size=20)  # adjust font size here
-#             #},
-#             legend=dict(
-#                 orientation="h",  # Horizontal legend
-#                 yanchor="top",  # Align legend to the top
-#                 y=-0.35,  # Move legend below the graph
-#                 xanchor="center",  # Align legend to the center
-#                 x=0.5,  # Horizontal position of the legend
-#                 tracegroupgap=5,  # Space between different legend items
-#                 font=dict(size=12)  # Optional: change font size of the legend items
-#             )
-#         )
-
-#         fig.update_xaxes(
-#             tickmode="array",
-#             tickvals=sorted(graph17["year"].unique()),  # Ensure correct years are displayed
-#             title_text="Year"
-#         )
-
-#         fig.update_yaxes(title_text="Share of CapEx Flow", range=[0, 100])  # Y-axis is percentage, 0-100%
-
-#         fig.update_layout(
-#             plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
-#             paper_bgcolor="white",  # White card background
-#             margin=dict(l=40, r=40, t=50, b=40)  # Prevents stretching
-#         )
-
-#         return fig 
 
 app = App(app_ui, server)
