@@ -1,7 +1,0 @@
-# Activate Environment
-
-& "C:\Users\wb621521\Documents\Projects\Invest.Data\deployment\clean_env\Scripts\Activate.ps1"
-
-# Run Rsconnect Helper in powershell
-
-python rsconnect_helper.py
