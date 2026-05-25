@@ -1,0 +1,12 @@
+{
+    "https://w0lxdrconn01.worldbank.org/": {
+        "server_url": "https://w0lxdrconn01.worldbank.org/",
+        "filename": "C:\\Users\\wb621521\\OneDrive - WBG\\1. ETIIC\\Invest.Data\\rsconnect_bundle",
+        "app_url": "https://w0lxdrconn01.worldbank.org/content/5e852ab5-5f28-4ff1-9099-dbbca007b9de/",
+        "app_id": "5e852ab5-5f28-4ff1-9099-dbbca007b9de",
+        "app_guid": "5e852ab5-5f28-4ff1-9099-dbbca007b9de",
+        "title": "rsconnect_bundle",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}

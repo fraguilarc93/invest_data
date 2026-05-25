@@ -1,195 +1,218 @@
-ecode,economy
-AFG,Afghanistan
-ALB,Albania
-DZA,Algeria
-AND,Andorra
-AGO,Angola
-ATG,Antigua and Barbuda
-ARG,Argentina
-ARM,Armenia
-AUS,Australia
-AUT,Austria
-AZE,Azerbaijan
-BHS,"Bahamas, The"
-BHR,Bahrain
-BGD,Bangladesh
-BRB,Barbados
-BLR,Belarus
-BEL,Belgium
-BLZ,Belize
-BEN,Benin
-BTN,Bhutan
-BOL,Bolivia
-BIH,Bosnia and Herzegovina
-BWA,Botswana
-BRA,Brazil
-BRN,Brunei Darussalam
-BGR,Bulgaria
-BFA,Burkina Faso
-BDI,Burundi
-CPV,Cabo Verde
-KHM,Cambodia
-CMR,Cameroon
-CAN,Canada
-CAF,Central African Republic
-TCD,Chad
-CHL,Chile
-CHN,China
-COL,Colombia
-COM,Comoros
-COD,"Congo, Dem. Rep."
-COG,"Congo, Rep."
-CRI,Costa Rica
-HRV,Croatia
-CYP,Cyprus
-CZE,Czechia
-DNK,Denmark
-DJI,Djibouti
-DMA,Dominica
-DOM,Dominican Republic
-ECU,Ecuador
-EGY,"Egypt, Arab Rep."
-SLV,El Salvador
-GNQ,Equatorial Guinea
-ERI,Eritrea
-EST,Estonia
-SWZ,Eswatini
-ETH,Ethiopia
-FJI,Fiji
-FIN,Finland
-FRA,France
-GUF,French Guiana
-GAB,Gabon
-GMB,"Gambia, The"
-GEO,Georgia
-DEU,Germany
-GHA,Ghana
-GRC,Greece
-GRD,Grenada
-GLP,Guadeloupe
-GTM,Guatemala
-GIN,Guinea
-GNB,Guinea-Bissau
-GUY,Guyana
-HTI,Haiti
-HND,Honduras
-HUN,Hungary
-ISL,Iceland
-IND,India
-IDN,Indonesia
-IRN,"Iran, Islamic Rep."
-IRQ,Iraq
-IRL,Ireland
-ISR,Israel
-ITA,Italy
-JAM,Jamaica
-JPN,Japan
-JOR,Jordan
-KAZ,Kazakhstan
-KEN,Kenya
-KIR,Kiribati
-KOR,"Korea, Rep."
-XKX,Kosovo
-KWT,Kuwait
-KGZ,Kyrgyz Republic
-LAO,Lao PDR
-LVA,Latvia
-LBN,Lebanon
-LSO,Lesotho
-LBR,Liberia
-LBY,Libya
-LTU,Lithuania
-LUX,Luxembourg
-MDG,Madagascar
-MWI,Malawi
-MYS,Malaysia
-MDV,Maldives
-MLI,Mali
-MLT,Malta
-MHL,Marshall Islands
-MTQ,Martinique
-MRT,Mauritania
-MUS,Mauritius
-MYT,Mayotte
-MEX,Mexico
-FSM,"Micronesia, Fed. Sts."
-MDA,Moldova
-MNG,Mongolia
-MNE,Montenegro
-MAR,Morocco
-MOZ,Mozambique
-MMR,Myanmar
-NAM,Namibia
-NRU,Nauru
-NPL,Nepal
-NLD,Netherlands
-NZL,New Zealand
-NIC,Nicaragua
-NER,Niger
-NGA,Nigeria
-MKD,North Macedonia
-NOR,Norway
-OMN,Oman
-PAK,Pakistan
-PLW,Palau
-PAN,Panama
-PNG,Papua New Guinea
-PRY,Paraguay
-PER,Peru
-PHL,Philippines
-POL,Poland
-PRT,Portugal
-QAT,Qatar
-REU,Reunion
-ROU,Romania
-RUS,Russian Federation
-RWA,Rwanda
-WSM,Samoa
-SMR,San Marino
-STP,Sao Tome and Principe
-SAU,Saudi Arabia
-SEN,Senegal
-SRB,Serbia
-SYC,Seychelles
-SLE,Sierra Leone
-SGP,Singapore
-SVK,Slovak Republic
-SVN,Slovenia
-SLB,Solomon Islands
-SOM,Somalia
-ZAF,South Africa
-SSD,South Sudan
-ESP,Spain
-LKA,Sri Lanka
-KNA,St. Kitts and Nevis
-LCA,St. Lucia
-VCT,St. Vincent and the Grenadines
-SDN,Sudan
-SUR,Suriname
-SWE,Sweden
-CHE,Switzerland
-SYR,Syrian Arab Republic
-TJK,Tajikistan
-TZA,Tanzania
-THA,Thailand
-TLS,Timor-Leste
-TGO,Togo
-TON,Tonga
-TTO,Trinidad and Tobago
-TUN,Tunisia
-TUR,Turkiye
-TKM,Turkmenistan
-TUV,Tuvalu
-UGA,Uganda
-UKR,Ukraine
-ARE,United Arab Emirates
-GBR,United Kingdom
-USA,United States
-URY,Uruguay
-UZB,Uzbekistan
-VUT,Vanuatu
-VEN,"Venezuela, RB"
-VNM,Vietnam
-YEM,"Yemen, Rep."
-ZMB,Zambia
-ZWE,Zimbabwe
+ecode,economy,region
+AFG,Afghanistan,"Middle East, North Africa, Afghanistan & Pakistan"
+ALB,Albania,Europe & Central Asia
+DZA,Algeria,"Middle East, North Africa, Afghanistan & Pakistan"
+ASM,American Samoa,East Asia & Pacific
+AND,Andorra,Europe & Central Asia
+AGO,Angola,Sub-Saharan Africa
+ATG,Antigua and Barbuda,Latin America & Caribbean
+ARG,Argentina,Latin America & Caribbean
+ARM,Armenia,Europe & Central Asia
+ABW,Aruba,Latin America & Caribbean
+AUS,Australia,East Asia & Pacific
+AUT,Austria,Europe & Central Asia
+AZE,Azerbaijan,Europe & Central Asia
+BHS,"Bahamas, The",Latin America & Caribbean
+BHR,Bahrain,"Middle East, North Africa, Afghanistan & Pakistan"
+BGD,Bangladesh,South Asia
+BRB,Barbados,Latin America & Caribbean
+BLR,Belarus,Europe & Central Asia
+BEL,Belgium,Europe & Central Asia
+BLZ,Belize,Latin America & Caribbean
+BEN,Benin,Sub-Saharan Africa
+BMU,Bermuda,North America
+BTN,Bhutan,South Asia
+BOL,Bolivia,Latin America & Caribbean
+BIH,Bosnia and Herzegovina,Europe & Central Asia
+BWA,Botswana,Sub-Saharan Africa
+BRA,Brazil,Latin America & Caribbean
+VGB,British Virgin Islands,Latin America & Caribbean
+BRN,Brunei Darussalam,East Asia & Pacific
+BGR,Bulgaria,Europe & Central Asia
+BFA,Burkina Faso,Sub-Saharan Africa
+BDI,Burundi,Sub-Saharan Africa
+CPV,Cabo Verde,Sub-Saharan Africa
+KHM,Cambodia,East Asia & Pacific
+CMR,Cameroon,Sub-Saharan Africa
+CAN,Canada,North America
+CYM,Cayman Islands,Latin America & Caribbean
+CAF,Central African Republic,Sub-Saharan Africa
+TCD,Chad,Sub-Saharan Africa
+CHI,Channel Islands,Europe & Central Asia
+CHL,Chile,Latin America & Caribbean
+CHN,China,East Asia & Pacific
+COL,Colombia,Latin America & Caribbean
+COM,Comoros,Sub-Saharan Africa
+COD,"Congo, Dem. Rep.",Sub-Saharan Africa
+COG,"Congo, Rep.",Sub-Saharan Africa
+CRI,Costa Rica,Latin America & Caribbean
+HRV,Croatia,Europe & Central Asia
+CUB,Cuba,Latin America & Caribbean
+CUW,Curaçao,Latin America & Caribbean
+CYP,Cyprus,Europe & Central Asia
+CZE,Czechia,Europe & Central Asia
+CIV,Côte d'Ivoire,Sub-Saharan Africa
+DNK,Denmark,Europe & Central Asia
+DJI,Djibouti,"Middle East, North Africa, Afghanistan & Pakistan"
+DMA,Dominica,Latin America & Caribbean
+DOM,Dominican Republic,Latin America & Caribbean
+ECU,Ecuador,Latin America & Caribbean
+EGY,"Egypt, Arab Rep.","Middle East, North Africa, Afghanistan & Pakistan"
+SLV,El Salvador,Latin America & Caribbean
+GNQ,Equatorial Guinea,Sub-Saharan Africa
+ERI,Eritrea,Sub-Saharan Africa
+EST,Estonia,Europe & Central Asia
+SWZ,Eswatini,Sub-Saharan Africa
+ETH,Ethiopia,Sub-Saharan Africa
+FRO,Faroe Islands,Europe & Central Asia
+FJI,Fiji,East Asia & Pacific
+FIN,Finland,Europe & Central Asia
+FRA,France,Europe & Central Asia
+PYF,French Polynesia,East Asia & Pacific
+GAB,Gabon,Sub-Saharan Africa
+GMB,"Gambia, The",Sub-Saharan Africa
+GEO,Georgia,Europe & Central Asia
+DEU,Germany,Europe & Central Asia
+GHA,Ghana,Sub-Saharan Africa
+GIB,Gibraltar,Europe & Central Asia
+GRC,Greece,Europe & Central Asia
+GRL,Greenland,Europe & Central Asia
+GRD,Grenada,Latin America & Caribbean
+GUM,Guam,East Asia & Pacific
+GTM,Guatemala,Latin America & Caribbean
+GIN,Guinea,Sub-Saharan Africa
+GNB,Guinea-Bissau,Sub-Saharan Africa
+GUY,Guyana,Latin America & Caribbean
+HTI,Haiti,Latin America & Caribbean
+HND,Honduras,Latin America & Caribbean
+HKG,"Hong Kong SAR, China",East Asia & Pacific
+HUN,Hungary,Europe & Central Asia
+ISL,Iceland,Europe & Central Asia
+IND,India,South Asia
+IDN,Indonesia,East Asia & Pacific
+IRN,"Iran, Islamic Rep.","Middle East, North Africa, Afghanistan & Pakistan"
+IRQ,Iraq,"Middle East, North Africa, Afghanistan & Pakistan"
+IRL,Ireland,Europe & Central Asia
+IMN,Isle of Man,Europe & Central Asia
+ISR,Israel,"Middle East, North Africa, Afghanistan & Pakistan"
+ITA,Italy,Europe & Central Asia
+JAM,Jamaica,Latin America & Caribbean
+JPN,Japan,East Asia & Pacific
+JOR,Jordan,"Middle East, North Africa, Afghanistan & Pakistan"
+KAZ,Kazakhstan,Europe & Central Asia
+KEN,Kenya,Sub-Saharan Africa
+KIR,Kiribati,East Asia & Pacific
+PRK,"Korea, Dem. People's Rep.",East Asia & Pacific
+KOR,"Korea, Rep.",East Asia & Pacific
+XKX,Kosovo,Europe & Central Asia
+KWT,Kuwait,"Middle East, North Africa, Afghanistan & Pakistan"
+KGZ,Kyrgyz Republic,Europe & Central Asia
+LAO,Lao PDR,East Asia & Pacific
+LVA,Latvia,Europe & Central Asia
+LBN,Lebanon,"Middle East, North Africa, Afghanistan & Pakistan"
+LSO,Lesotho,Sub-Saharan Africa
+LBR,Liberia,Sub-Saharan Africa
+LBY,Libya,"Middle East, North Africa, Afghanistan & Pakistan"
+LIE,Liechtenstein,Europe & Central Asia
+LTU,Lithuania,Europe & Central Asia
+LUX,Luxembourg,Europe & Central Asia
+MAC,"Macao SAR, China",East Asia & Pacific
+MDG,Madagascar,Sub-Saharan Africa
+MWI,Malawi,Sub-Saharan Africa
+MYS,Malaysia,East Asia & Pacific
+MDV,Maldives,South Asia
+MLI,Mali,Sub-Saharan Africa
+MLT,Malta,"Middle East, North Africa, Afghanistan & Pakistan"
+MHL,Marshall Islands,East Asia & Pacific
+MRT,Mauritania,Sub-Saharan Africa
+MUS,Mauritius,Sub-Saharan Africa
+MEX,Mexico,Latin America & Caribbean
+FSM,"Micronesia, Fed. Sts.",East Asia & Pacific
+MDA,Moldova,Europe & Central Asia
+MCO,Monaco,Europe & Central Asia
+MNG,Mongolia,East Asia & Pacific
+MNE,Montenegro,Europe & Central Asia
+MAR,Morocco,"Middle East, North Africa, Afghanistan & Pakistan"
+MOZ,Mozambique,Sub-Saharan Africa
+MMR,Myanmar,East Asia & Pacific
+NAM,Namibia,Sub-Saharan Africa
+NRU,Nauru,East Asia & Pacific
+NPL,Nepal,South Asia
+NLD,Netherlands,Europe & Central Asia
+NCL,New Caledonia,East Asia & Pacific
+NZL,New Zealand,East Asia & Pacific
+NIC,Nicaragua,Latin America & Caribbean
+NER,Niger,Sub-Saharan Africa
+NGA,Nigeria,Sub-Saharan Africa
+MKD,North Macedonia,Europe & Central Asia
+MNP,Northern Mariana Islands,East Asia & Pacific
+NOR,Norway,Europe & Central Asia
+OMN,Oman,"Middle East, North Africa, Afghanistan & Pakistan"
+PAK,Pakistan,"Middle East, North Africa, Afghanistan & Pakistan"
+PLW,Palau,East Asia & Pacific
+PAN,Panama,Latin America & Caribbean
+PNG,Papua New Guinea,East Asia & Pacific
+PRY,Paraguay,Latin America & Caribbean
+PER,Peru,Latin America & Caribbean
+PHL,Philippines,East Asia & Pacific
+POL,Poland,Europe & Central Asia
+PRT,Portugal,Europe & Central Asia
+PRI,Puerto Rico,Latin America & Caribbean
+QAT,Qatar,"Middle East, North Africa, Afghanistan & Pakistan"
+ROU,Romania,Europe & Central Asia
+RUS,Russian Federation,Europe & Central Asia
+RWA,Rwanda,Sub-Saharan Africa
+WSM,Samoa,East Asia & Pacific
+SMR,San Marino,Europe & Central Asia
+SAU,Saudi Arabia,"Middle East, North Africa, Afghanistan & Pakistan"
+SEN,Senegal,Sub-Saharan Africa
+SRB,Serbia,Europe & Central Asia
+SYC,Seychelles,Sub-Saharan Africa
+SLE,Sierra Leone,Sub-Saharan Africa
+SGP,Singapore,East Asia & Pacific
+SXM,Sint Maarten (Dutch part),Latin America & Caribbean
+SVK,Slovak Republic,Europe & Central Asia
+SVN,Slovenia,Europe & Central Asia
+SLB,Solomon Islands,East Asia & Pacific
+SOM,Somalia,Sub-Saharan Africa
+ZAF,South Africa,Sub-Saharan Africa
+SSD,South Sudan,Sub-Saharan Africa
+ESP,Spain,Europe & Central Asia
+LKA,Sri Lanka,South Asia
+KNA,St. Kitts and Nevis,Latin America & Caribbean
+LCA,St. Lucia,Latin America & Caribbean
+VCT,St. Vincent and the Grenadines,Latin America & Caribbean
+SDN,Sudan,Sub-Saharan Africa
+SUR,Suriname,Latin America & Caribbean
+SWE,Sweden,Europe & Central Asia
+CHE,Switzerland,Europe & Central Asia
+SYR,Syrian Arab Republic,"Middle East, North Africa, Afghanistan & Pakistan"
+STP,São Tomé and Príncipe,Sub-Saharan Africa
+TWN,"Taiwan, China",East Asia & Pacific
+TJK,Tajikistan,Europe & Central Asia
+TZA,Tanzania,Sub-Saharan Africa
+THA,Thailand,East Asia & Pacific
+TLS,Timor-Leste,East Asia & Pacific
+TGO,Togo,Sub-Saharan Africa
+TON,Tonga,East Asia & Pacific
+TTO,Trinidad and Tobago,Latin America & Caribbean
+TUN,Tunisia,"Middle East, North Africa, Afghanistan & Pakistan"
+TKM,Turkmenistan,Europe & Central Asia
+TCA,Turks and Caicos Islands,Latin America & Caribbean
+TUV,Tuvalu,East Asia & Pacific
+TUR,Türkiye,Europe & Central Asia
+UGA,Uganda,Sub-Saharan Africa
+UKR,Ukraine,Europe & Central Asia
+ARE,United Arab Emirates,"Middle East, North Africa, Afghanistan & Pakistan"
+GBR,United Kingdom,Europe & Central Asia
+USA,United States,North America
+URY,Uruguay,Latin America & Caribbean
+UZB,Uzbekistan,Europe & Central Asia
+VUT,Vanuatu,East Asia & Pacific
+VEN,"Venezuela, RB",Latin America & Caribbean
+VNM,Vietnam,East Asia & Pacific
+VIR,Virgin Islands (U.S.),Latin America & Caribbean
+PSE,West Bank and Gaza,"Middle East, North Africa, Afghanistan & Pakistan"
+YEM,"Yemen, Rep.","Middle East, North Africa, Afghanistan & Pakistan"
+ZMB,Zambia,Sub-Saharan Africa
+ZWE,Zimbabwe,Sub-Saharan Africa
