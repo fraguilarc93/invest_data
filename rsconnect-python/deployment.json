@@ -1,0 +1,12 @@
+{
+    "https://w0lxdrconn01.worldbank.org/": {
+        "server_url": "https://w0lxdrconn01.worldbank.org/",
+        "filename": "C:\\Users\\wb621521\\Documents\\Projects\\Invest.Data\\deployment",
+        "app_url": "https://w0lxdrconn01.worldbank.org/IDD/",
+        "app_id": "6d3800d2-afff-4809-a3ec-9d6394817195",
+        "app_guid": "6d3800d2-afff-4809-a3ec-9d6394817195",
+        "title": "deployment",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}

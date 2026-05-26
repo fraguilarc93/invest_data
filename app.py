@@ -1,3 +1,6 @@
+# Only for EGPYT
+import os
+
 # Shiny App for Investment and Policy Trends and Insights (Invest.Data)
 from shiny import App, Inputs, Outputs, Session, reactive, ui
 
@@ -10,6 +13,9 @@ from bilateral_trends_panel import bilateral_trends_ui, bilateral_trends_server
 from business_environment_panel import business_environment_ui, business_environment_server
 from linkages_panel import linkages_ui, linkages_server
 from about_panel import about_ui
+
+# ONLY FOR EGPYT
+APP_PASSWORD = os.environ.get("APP_PASSWORD", None)
 
 # Define the UI layout
 app_ui = ui.page_fluid(
@@ -311,91 +317,221 @@ def server(input: Inputs, output: Outputs, session: Session):
     business_environment_server(input, output, session)
     linkages_server(input, output, session)
 
-    ##################################
-    ## 0. Tutorial Modal
-    def tutorial_step():
-        return ui.modal(
-            ui.HTML("""
-                <div style="text-align:center; margin-bottom:20px;">
-                    <h2 style="font-size:26px; font-weight:700; color:#0a2d45; margin-bottom:4px;">
-                        Welcome to Invest<span style="color:#3f9dd4;">.Data</span>
-                    </h2>
-                    <p style="font-size:13px; color:#555555; margin:0;">
-                        Investment and Policy Trends and Insights
-                    </p>
-                </div>
+    # ##################################
+    # ## 0. Tutorial Modal
+    # def tutorial_step():
+    #     return ui.modal(
+    #         ui.HTML("""
+    #             <div style="text-align:center; margin-bottom:20px;">
+    #                 <h2 style="font-size:26px; font-weight:700; color:#0a2d45; margin-bottom:4px;">
+    #                     Welcome to Invest<span style="color:#3f9dd4;">.Data</span>
+    #                 </h2>
+    #                 <p style="font-size:13px; color:#555555; margin:0;">
+    #                     Investment and Policy Trends and Insights
+    #                 </p>
+    #             </div>
 
-                <div style="
-                    background:#e8f4fb; border:1px solid #d4e4ef;
-                    border-left:4px solid #3f9dd4; border-radius:8px;
-                    padding:14px 18px; margin-bottom:16px;
-                ">
-                    <p style="font-size:11px; font-weight:700; letter-spacing:1.5px;
-                            text-transform:uppercase; color:#3f9dd4; margin-bottom:6px;">
-                        📋 About this Tool
-                    </p>
-                    <p style="font-size:14px; color:#333333; margin:0; line-height:1.6;">
-                        Invest.Data is a product of the <b>SME and Enterprise Development,
-                        Policy &amp; Regulations Unit (WKPTS)</b>, providing a dynamic view of
-                        investment and policy trends across economies, regions, and income levels.
-                    </p>
-                </div>
+    #             <div style="
+    #                 background:#e8f4fb; border:1px solid #d4e4ef;
+    #                 border-left:4px solid #3f9dd4; border-radius:8px;
+    #                 padding:14px 18px; margin-bottom:16px;
+    #             ">
+    #                 <p style="font-size:11px; font-weight:700; letter-spacing:1.5px;
+    #                         text-transform:uppercase; color:#3f9dd4; margin-bottom:6px;">
+    #                     📋 About this Tool
+    #                 </p>
+    #                 <p style="font-size:14px; color:#333333; margin:0; line-height:1.6;">
+    #                     Invest.Data is a product of the <b>SME and Enterprise Development,
+    #                     Policy &amp; Regulations Unit (WKPTS)</b>, providing a dynamic view of
+    #                     investment and policy trends across economies, regions, and income levels.
+    #                 </p>
+    #             </div>
 
-                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                    <div style="flex:1; min-width:140px; background:#f5f9fc;
-                                border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
-                        <p style="font-size:11px; font-weight:700; color:#3f9dd4;
-                                text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
-                            🧭 Navigate
-                        </p>
-                        <p style="font-size:12px; color:#555; margin:0;">
-                            Use the tabs at the top to explore FDI, bilateral trends,
-                            business environment, and more.
-                        </p>
-                    </div>
-                    <div style="flex:1; min-width:140px; background:#f5f9fc;
-                                border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
-                        <p style="font-size:11px; font-weight:700; color:#3f9dd4;
-                                text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
-                            🔍 Filter
-                        </p>
-                        <p style="font-size:12px; color:#555; margin:0;">
-                            Apply sidebar filters to tailor the data to your economy
-                            or region of interest.
-                        </p>
-                    </div>
-                    <div style="flex:1; min-width:140px; background:#f5f9fc;
-                                border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
-                        <p style="font-size:11px; font-weight:700; color:#3f9dd4;
-                                text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
-                            ℹ️ Learn
-                        </p>
-                        <p style="font-size:12px; color:#555; margin:0;">
-                            Visit the <b>About</b> tab for background,
-                            methodology, and data sources.
-                        </p>
-                    </div>
-                </div>
+    #             <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+    #                 <div style="flex:1; min-width:140px; background:#f5f9fc;
+    #                             border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+    #                     <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+    #                             text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+    #                         🧭 Navigate
+    #                     </p>
+    #                     <p style="font-size:12px; color:#555; margin:0;">
+    #                         Use the tabs at the top to explore FDI, bilateral trends,
+    #                         business environment, and more.
+    #                     </p>
+    #                 </div>
+    #                 <div style="flex:1; min-width:140px; background:#f5f9fc;
+    #                             border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+    #                     <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+    #                             text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+    #                         🔍 Filter
+    #                     </p>
+    #                     <p style="font-size:12px; color:#555; margin:0;">
+    #                         Apply sidebar filters to tailor the data to your economy
+    #                         or region of interest.
+    #                     </p>
+    #                 </div>
+    #                 <div style="flex:1; min-width:140px; background:#f5f9fc;
+    #                             border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+    #                     <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+    #                             text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+    #                         ℹ️ Learn
+    #                     </p>
+    #                     <p style="font-size:12px; color:#555; margin:0;">
+    #                         Visit the <b>About</b> tab for background,
+    #                         methodology, and data sources.
+    #                     </p>
+    #                 </div>
+    #             </div>
 
-                <p style="font-size:12px; color:#888; text-align:center; margin:0;">
-                    🔒 <b>For World Bank Group internal use only.</b>
-                    Do not distribute externally.
+    #             <p style="font-size:12px; color:#888; text-align:center; margin:0;">
+    #                 🔒 <b>For World Bank Group internal use only.</b>
+    #                 Do not distribute externally.
+    #             </p>
+    #         """),
+    #         title="",
+    #         easy_close=True,
+    #         footer=ui.input_action_button("btn_close_tutorial", "Access Invest.Data", class_="btn-primary")
+    #     )
+
+    # # Show tutorial when app loads
+    # @reactive.effect
+    # def _show_tutorial():
+    #     ui.modal_show(tutorial_step())
+
+    # # Close tutorial when button clicked
+    # @reactive.effect
+    # @reactive.event(input.btn_close_tutorial)
+    # def _close_tutorial():
+    #     ui.modal_remove()
+
+
+##### EGPYT ONLY #####
+## 0. Login + Tutorial Modal
+authenticated = reactive.value(False)
+
+def login_modal(error: bool = False):
+    return ui.modal(
+        ui.HTML("""
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:26px; font-weight:700; color:#0a2d45; margin-bottom:4px;">
+                    Invest<span style="color:#3f9dd4;">.Data</span>
+                </h2>
+                <p style="font-size:13px; color:#555555; margin:0;">
+                    Investment and Policy Trends and Insights
                 </p>
-            """),
-            title="",
-            easy_close=True,
-            footer=ui.input_action_button("btn_close_tutorial", "Access Invest.Data", class_="btn-primary")
-        )
+            </div>
+            <p style="font-size:13px; color:#333; text-align:center; margin-bottom:16px;">
+                🔒 This tool is for <b>World Bank Group internal use only</b>.<br>
+                Please enter the access password to continue.
+            </p>
+        """ + ("""
+            <p style="color:red; text-align:center; font-size:13px;">
+                ❌ Incorrect password. Please try again.
+            </p>
+        """ if error else "")),
+        ui.input_password("pwd_input", "Password"),
+        title="",
+        easy_close=False,
+        footer=ui.input_action_button("btn_login", "Enter", class_="btn-primary")
+    )
 
-    # Show tutorial when app loads
-    @reactive.effect
-    def _show_tutorial():
+def tutorial_step():
+    return ui.modal(
+        ui.HTML("""
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:26px; font-weight:700; color:#0a2d45; margin-bottom:4px;">
+                    Welcome to Invest<span style="color:#3f9dd4;">.Data</span>
+                </h2>
+                <p style="font-size:13px; color:#555555; margin:0;">
+                    Investment and Policy Trends and Insights
+                </p>
+            </div>
+
+            <div style="
+                background:#e8f4fb; border:1px solid #d4e4ef;
+                border-left:4px solid #3f9dd4; border-radius:8px;
+                padding:14px 18px; margin-bottom:16px;
+            ">
+                <p style="font-size:11px; font-weight:700; letter-spacing:1.5px;
+                        text-transform:uppercase; color:#3f9dd4; margin-bottom:6px;">
+                    📋 About this Tool
+                </p>
+                <p style="font-size:14px; color:#333333; margin:0; line-height:1.6;">
+                    Invest.Data is a product of the <b>SME and Enterprise Development,
+                    Policy &amp; Regulations Unit (WKPTS)</b>, providing a dynamic view of
+                    investment and policy trends across economies, regions, and income levels.
+                </p>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+                <div style="flex:1; min-width:140px; background:#f5f9fc;
+                            border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+                    <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+                            text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+                        🧭 Navigate
+                    </p>
+                    <p style="font-size:12px; color:#555; margin:0;">
+                        Use the tabs at the top to explore FDI, bilateral trends,
+                        business environment, and more.
+                    </p>
+                </div>
+                <div style="flex:1; min-width:140px; background:#f5f9fc;
+                            border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+                    <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+                            text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+                        🔍 Filter
+                    </p>
+                    <p style="font-size:12px; color:#555; margin:0;">
+                        Apply sidebar filters to tailor the data to your economy
+                        or region of interest.
+                    </p>
+                </div>
+                <div style="flex:1; min-width:140px; background:#f5f9fc;
+                            border:1px solid #d4e4ef; border-radius:6px; padding:10px 14px;">
+                    <p style="font-size:11px; font-weight:700; color:#3f9dd4;
+                            text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+                        ℹ️ Learn
+                    </p>
+                    <p style="font-size:12px; color:#555; margin:0;">
+                        Visit the <b>About</b> tab for background,
+                        methodology, and data sources.
+                    </p>
+                </div>
+            </div>
+
+            <p style="font-size:12px; color:#888; text-align:center; margin:0;">
+                🔒 <b>For World Bank Group internal use only.</b>
+                Do not distribute externally.
+            </p>
+        """),
+        title="",
+        easy_close=True,
+        footer=ui.input_action_button("btn_close_tutorial", "Access Invest.Data", class_="btn-primary")
+    )
+
+# Show login if password is set, otherwise go straight to tutorial
+@reactive.effect
+def _on_load():
+    if APP_PASSWORD:
+        ui.modal_show(login_modal(error=False))
+    else:
         ui.modal_show(tutorial_step())
 
-    # Close tutorial when button clicked
-    @reactive.effect
-    @reactive.event(input.btn_close_tutorial)
-    def _close_tutorial():
+# Check password and re-render modal with error if wrong
+@reactive.effect
+@reactive.event(input.btn_login)
+def _check_password():
+    if input.pwd_input() == APP_PASSWORD:
+        authenticated.set(True)
         ui.modal_remove()
+        ui.modal_show(tutorial_step())
+    else:
+        ui.modal_show(login_modal(error=True))
+
+# Close tutorial
+@reactive.effect
+@reactive.event(input.btn_close_tutorial)
+def _close_tutorial():
+    ui.modal_remove()
      
 app = App(app_ui, server)
